@@ -1,0 +1,893 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Monoton&display=swap');
+
+:root {
+  --symbol-height: clamp(55px, 16vh, 120px);
+  --reel-width: clamp(65px, 24vw, 140px);
+  --electric-color: #ff00de;
+  --electric-secondary: #00ffff;
+  --bg-dark: #000000;
+}
+
+/* Kada je režim sa 5 koluta, prilagođavamo širinu da sve stane lepo */
+.mode-5-reels {
+  --reel-width: clamp(52px, 16vw, 105px);
+  --symbol-height: clamp(48px, 14vh, 100px);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg-dark);
+  font-family: 'Orbitron', sans-serif;
+  color: white;
+  overflow-y: auto;
+  overflow-x: hidden;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  touch-action: manipulation;
+  padding: 10px 4px 25px 4px;
+  margin: 0;
+}
+
+/* Background Hypno Ambient */
+.hypno-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: -10;
+  pointer-events: none;
+  background: radial-gradient(circle at center, #08020c 30%, #000000 100%);
+}
+
+#bg-rings-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  perspective: 1000px;
+}
+
+.hypno-fruit-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 70px;
+  height: 70px;
+  opacity: 0;
+  filter: grayscale(1) brightness(0.25);
+  animation: slow-drift linear infinite;
+}
+.hypno-fruit-item svg {
+  width: 100%;
+  height: 100%;
+  stroke-width: 1.5;
+  fill: none;
+}
+
+@keyframes slow-drift {
+  0% { transform: translate(-50%, -50%) rotate(var(--start-angle)) translate(85vmax) rotate(0deg) scale(1.4); opacity: 0; }
+  15% { opacity: 0.25; }
+  85% { opacity: 0.25; }
+  100% { transform: translate(-50%, -50%) rotate(calc(var(--start-angle) + 60deg)) translate(0) rotate(-180deg) scale(0.2); opacity: 0; }
+}
+
+/* Naslov i Glitch */
+.retro-title {
+  font-family: 'Monoton', cursive;
+  font-size: clamp(1.4rem, 4.5vw, 2.8rem);
+  color: #ff00de;
+  text-shadow: 0 0 10px #ff00de, 0 0 25px #ff00de;
+  letter-spacing: 2px;
+  position: relative;
+  display: inline-block;
+  margin: 0;
+}
+.retro-title::before, .retro-title::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: transparent;
+  overflow: hidden;
+}
+.retro-title::before {
+  left: -2px;
+  text-shadow: 2px 0 #00ffff;
+  clip: rect(24px, 550px, 90px, 0);
+  animation: glitch-anim-1 3s infinite linear alternate-reverse;
+}
+.retro-title::after {
+  left: 2px;
+  text-shadow: -2px 0 #ff0055;
+  clip: rect(85px, 550px, 140px, 0);
+  animation: glitch-anim-2 2.5s infinite linear alternate-reverse;
+}
+@keyframes glitch-anim-1 { 0% { clip: rect(15px, 9999px, 10px, 0); } 100% { clip: rect(65px, 9999px, 85px, 0); } }
+@keyframes glitch-anim-2 { 0% { clip: rect(75px, 9999px, 85px, 0); } 100% { clip: rect(8px, 9999px, 75px, 0); } }
+
+/* --- CASINO LOBBY STYLES --- */
+#lobby-view {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+#slot-game-view {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.lobby-cabinet-card {
+  position: relative;
+  background: radial-gradient(circle at 50% 0%, rgba(26, 12, 38, 0.95) 0%, rgba(6, 3, 10, 0.98) 100%);
+  border: 2px solid #332042;
+  border-radius: 20px;
+  padding: 16px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.lobby-cabinet-card:hover {
+  transform: translateY(-6px) scale(1.02);
+  border-color: var(--card-glow, #ff00de);
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.9), 0 0 30px var(--card-glow, #ff00de);
+}
+
+.lobby-cabinet-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 45%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), transparent);
+  border-radius: 18px 18px 0 0;
+  pointer-events: none;
+}
+
+.cabinet-badge {
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  border: 1px solid currentColor;
+  display: inline-block;
+  text-shadow: 0 0 8px currentColor;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
+
+.cabinet-play-btn {
+  background: linear-gradient(135deg, var(--card-glow, #ff00de), #ffffff);
+  color: #000;
+  font-weight: 900;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+  transition: all 0.25s ease;
+  box-shadow: 0 0 15px var(--card-glow, #ff00de);
+}
+
+.lobby-cabinet-card:hover .cabinet-play-btn {
+  filter: brightness(1.2);
+  transform: scale(1.03);
+}
+
+/* Return to Lobby Button */
+.back-lobby-btn {
+  background: rgba(10, 10, 20, 0.85);
+  border: 1.5px solid #00ffff;
+  color: #00ffff;
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.3);
+  transition: all 0.25s ease;
+}
+.back-lobby-btn:hover {
+  background: #00ffff;
+  color: #000000;
+  box-shadow: 0 0 20px #00ffff;
+  transform: scale(1.05);
+}
+
+/* Theme selector buttons */
+.theme-btn {
+  background: #000;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.theme-btn.active-theme {
+  border-width: 2px !important;
+  box-shadow: 0 0 15px currentColor !important;
+  transform: scale(1.05);
+}
+
+/* Jackpots */
+.jackpot-container {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  max-width: 650px;
+  margin-bottom: 8px;
+  justify-content: center;
+  padding: 0 4px;
+  flex-wrap: wrap;
+}
+.jackpot-box {
+  flex: 1;
+  background: radial-gradient(circle at 50% 0%, rgba(25, 25, 35, 0.7) 0%, rgba(5, 5, 10, 0.95) 100%);
+  border: 1.5px solid #333;
+  border-radius: 12px;
+  padding: 5px 8px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 95px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.8), inset 0 1px 2px rgba(255, 255, 255, 0.15);
+  transition: all 0.3s ease;
+}
+.jackpot-label {
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.jackpot-value {
+  font-size: clamp(0.95rem, 3.5vw, 1.35rem);
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+  z-index: 2;
+  position: relative;
+  text-shadow: 0 0 10px currentColor;
+}
+.must-drop-label {
+  font-size: 0.55rem;
+  color: #777;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  z-index: 2;
+}
+.must-drop-val { color: #ccc; }
+.jp-nano { border-color: #00ffcc; box-shadow: 0 0 12px rgba(0, 255, 204, 0.3), inset 0 0 8px rgba(0, 255, 204, 0.15); color: #00ffcc; }
+.jp-micro { border-color: #ff00de; box-shadow: 0 0 12px rgba(255, 0, 222, 0.3), inset 0 0 8px rgba(255, 0, 222, 0.15); color: #ff00de; }
+.jp-mini { border-color: #ffd700; box-shadow: 0 0 12px rgba(255, 215, 0, 0.3), inset 0 0 8px rgba(255, 215, 0, 0.15); color: #ffd700; }
+
+.jp-hot {
+  border-color: #ff0033 !important;
+  box-shadow: 0 0 25px #ff0033, inset 0 0 15px rgba(255, 0, 51, 0.6) !important;
+  animation: pulse-hot 0.5s infinite alternate;
+}
+@keyframes pulse-hot {
+  from { transform: scale(1); filter: brightness(1); }
+  to { transform: scale(1.04); filter: brightness(1.3); }
+}
+
+.heartbeat-container {
+  width: 100%;
+  height: 12px;
+  position: relative;
+  overflow: hidden;
+  opacity: 0.4;
+}
+.heartbeat-svg {
+  width: 200%;
+  height: 100%;
+  position: absolute;
+  left: 0; top: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  animation: heartbeat-slide 2s linear infinite;
+}
+@keyframes heartbeat-slide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Electric Machine Frame (Original & Enhanced Dual-Layer Plasma Border) */
+.electric-box {
+  position: relative;
+  background: rgba(4, 2, 8, 0.96);
+  border-radius: 26px;
+  z-index: 10;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.9), 0 0 30px rgba(255, 0, 222, 0.15);
+}
+/* Spoljna turbulenta električna plazma */
+.electric-box::before {
+  content: '';
+  position: absolute;
+  top: -8px; left: -8px; right: -8px; bottom: -8px;
+  border: 4px solid var(--electric-color);
+  border-radius: 34px;
+  z-index: -1;
+  filter: url(#turbulent-displace);
+  opacity: 0.95;
+  box-shadow: 
+    0 0 25px var(--electric-color),
+    0 0 50px var(--electric-color),
+    inset 0 0 15px var(--electric-color);
+  pointer-events: none;
+  animation: electric-flicker 4s infinite alternate ease-in-out;
+}
+/* Unutrašnji elektro-neon prsten sa staklenim beveled odsjajem */
+.electric-box::after {
+  content: '';
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border: 2px solid var(--electric-secondary);
+  border-radius: 27px;
+  box-shadow: 
+    0 0 12px var(--electric-secondary),
+    inset 0 0 45px rgba(0, 0, 0, 0.95);
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.85;
+}
+
+@keyframes electric-flicker {
+  0%, 100% { opacity: 0.9; filter: url(#turbulent-displace) drop-shadow(0 0 10px var(--electric-color)); }
+  50% { opacity: 1; filter: url(#turbulent-displace) drop-shadow(0 0 25px var(--electric-secondary)); }
+  72% { opacity: 0.75; }
+  74% { opacity: 1; }
+}
+
+/* Stat Box (Kredit / Dobitak) */
+.neon-stat-box {
+  position: relative;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.8);
+  flex: 1;
+}
+.neon-stat-box::before {
+  content: '';
+  position: absolute;
+  width: 300%;
+  height: 300%;
+  top: -100%; left: -100%;
+  background: conic-gradient(from 0deg, transparent 0deg, transparent 320deg, var(--stat-color) 360deg);
+  animation: rotate-border 3s linear infinite;
+}
+.stat-content {
+  background: #060609;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  z-index: 1;
+}
+.stat-credit { --stat-color: #00ffff; }
+.stat-win { --stat-color: #ffd700; }
+.stat-mult { --stat-color: #ff00de; transition: transform 0.2s; }
+.mult-active {
+  transform: scale(1.1);
+  box-shadow: 0 0 25px #ff00de, inset 0 0 10px #ff00de !important;
+}
+.stat-label { font-size: 0.6rem; letter-spacing: 1px; color: #777; }
+.stat-value { font-size: 1.25rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+@keyframes rotate-border { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* 3D Arcadeski Kabinet & Zakrivljeni Cilindrični Kolutovi */
+.reel-container-outer {
+  background: radial-gradient(circle at 50% 50%, #0d0814 0%, #020104 100%);
+  border: 2px solid #28283a;
+  border-radius: 16px;
+  position: relative;
+  box-shadow: inset 0 0 35px #000000, 0 10px 30px rgba(0, 0, 0, 0.9);
+  margin: 6px 0;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* 3D Cilindrična senka (Vignette) koja daje utisak pravog rotirajućeg valjka */
+.reel-container-outer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.85) 0%,
+    rgba(0, 0, 0, 0.25) 18%,
+    rgba(0, 0, 0, 0) 45%,
+    rgba(0, 0, 0, 0) 55%,
+    rgba(0, 0, 0, 0.25) 82%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* Stakleni odsjaj (Gloss Reflection) preko gornje trećine koluta */
+.reel-container-outer::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 42%;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 40%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 16;
+}
+
+.reel-window {
+  background: transparent;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  position: relative;
+  height: calc(var(--symbol-height) * 3);
+  width: var(--reel-width);
+}
+.reel-window:first-child { border-left: none; }
+.reel-window:last-child { border-right: none; }
+.stop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 0, 85, 0.15);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  backdrop-filter: blur(1px);
+}
+.stop-text {
+  color: #ff0055;
+  font-weight: 900;
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px #ff0055;
+  border: 1px solid #ff0055;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.6);
+}
+.manual-stop-flash {
+  animation: flash-white 0.2s ease-out;
+}
+@keyframes flash-white { 0% { background: white; } 100% { background: transparent; } }
+
+.reel-tape {
+  display: flex;
+  flex-direction: column;
+}
+.symbol-box {
+  height: var(--symbol-height);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.symbol-box svg {
+  width: 70%;
+  height: 70%;
+}
+
+/* --- PREMIUM NEON SYMBOLS (Double Glow & Metallic Tube) --- */
+.neon-svg {
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 8px currentColor) drop-shadow(0 0 16px currentColor);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
+  overflow: visible;
+}
+
+/* Idle Breathing animacija za simbole da igra izgleda živo */
+.symbol-box:hover .neon-svg {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 14px currentColor) drop-shadow(0 0 28px currentColor);
+}
+
+.color-cherry  { color: #ff0055; }
+.color-lemon   { color: #ffff00; }
+.color-plum    { color: #00ffff; }
+.color-grapes  { color: #39ff14; }
+.color-bell    { color: #ffaa00; }
+.color-seven   { color: #ff00de; animation: pulse-seven 3s infinite ease-in-out; }
+@keyframes pulse-seven {
+  0%, 100% { filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 8px #ff00de) drop-shadow(0 0 16px #ff00de); }
+  50% { filter: drop-shadow(0 0 4px #fff) drop-shadow(0 0 14px #00ffff) drop-shadow(0 0 28px #00ffff); }
+}
+
+.color-wild { 
+  color: #00ffff; 
+  animation: pulse-wild 2s infinite alternate ease-in-out; 
+}
+@keyframes pulse-wild {
+  0% { filter: drop-shadow(0 0 3px #ffffff) drop-shadow(0 0 10px #00ffff) drop-shadow(0 0 22px #00ffff); }
+  100% { filter: drop-shadow(0 0 5px #ffffff) drop-shadow(0 0 18px #ff00de) drop-shadow(0 0 32px #ff00de); }
+}
+
+.color-bonus  { color: #ff0044; animation: pulse-bonus 1.2s infinite ease-in-out; }
+.color-scatter{ color: #00ffff; animation: pulse-scatter 1.5s infinite alternate ease-in-out; }
+@keyframes pulse-bonus { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); filter: drop-shadow(0 0 20px #ff0044); } }
+@keyframes pulse-scatter { 0% { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 0 8px #00ffff); } 100% { transform: scale(1.1) rotate(3deg); filter: drop-shadow(0 0 24px #00ffff) drop-shadow(0 0 10px #ff00de); } }
+
+/* Anticipation režim za kolut koji čeka 3. scatter */
+.reel-anticipating {
+  border: 2px solid #00ffff !important;
+  box-shadow: 0 0 25px #00ffff, inset 0 0 15px rgba(0, 255, 255, 0.4) !important;
+  animation: anticipation-pulse 0.4s infinite alternate !important;
+}
+@keyframes anticipation-pulse {
+  from { filter: brightness(1); }
+  to { filter: brightness(1.6); }
+}
+
+/* Free spins neonski okvir mašine */
+.free-spins-active .electric-box::before {
+  border-color: #00ffff !important;
+  box-shadow: 0 0 30px #00ffff, inset 0 0 20px #00ffff !important;
+}
+.free-spins-active .retro-title {
+  color: #00ffff !important;
+  text-shadow: 0 0 15px #00ffff, 0 0 35px #00ffff !important;
+}
+
+.is-spinning .reel-tape {
+  animation: spinScroll 0.2s linear infinite;
+  filter: blur(0px 3px);
+}
+@keyframes spinScroll {
+  0% { transform: translateY(calc(var(--symbol-height) * -6)); }
+  100% { transform: translateY(0); }
+}
+
+.reel-stop {
+  animation: bounceStop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes bounceStop {
+  0% { transform: translateY(-25px); }
+  70% { transform: translateY(4px); }
+  100% { transform: translateY(0); }
+}
+
+.symbol-dim { opacity: 0.12; filter: grayscale(0.85) blur(0.5px); transition: 0.3s; }
+
+/* Dobitni simboli: pulsirajući neonski stakleni okvir i dvoslojni blesak */
+.symbol-win {
+  position: relative;
+  z-index: 18;
+}
+.symbol-win::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 2px solid #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 0 15px currentColor, inset 0 0 10px currentColor;
+  animation: win-box-glow 0.6s infinite alternate;
+  pointer-events: none;
+}
+@keyframes win-box-glow {
+  from { opacity: 0.6; transform: scale(0.96); filter: drop-shadow(0 0 4px currentColor); }
+  to { opacity: 1; transform: scale(1.02); filter: drop-shadow(0 0 16px #ffffff); }
+}
+
+.symbol-win svg {
+  animation: flicker-win 0.8s infinite alternate;
+  filter: drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 20px currentColor) drop-shadow(0 0 35px currentColor);
+}
+@keyframes flicker-win {
+  0%, 100% { opacity: 1; transform: scale(1.04); }
+  50% { opacity: 0.85; transform: scale(1.14); }
+}
+
+/* Kaskadna eksplozija dobitnih simbola */
+.symbol-explode {
+  animation: explode-neon 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  pointer-events: none;
+}
+@keyframes explode-neon {
+  0% { transform: scale(1); filter: brightness(2) drop-shadow(0 0 20px #ffffff); opacity: 1; }
+  50% { transform: scale(1.35) rotate(5deg); filter: brightness(3) drop-shadow(0 0 30px currentColor); opacity: 0.8; }
+  100% { transform: scale(0) rotate(-15deg); opacity: 0; }
+}
+
+/* Novi simboli koji upadaju odozgo tokom kaskade */
+.symbol-drop-in {
+  animation: drop-in-anim 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes drop-in-anim {
+  0% { transform: translateY(-70px); opacity: 0; }
+  70% { transform: translateY(8px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Controls */
+.bet-control-container {
+  background: #000;
+  border: 1px solid #333;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+.bet-btn {
+  background: #111;
+  color: #888;
+  border: 1px solid #282835;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+.bet-btn:active { transform: scale(0.92); }
+.bet-btn:hover { color: #fff; border-color: #00ffff; }
+
+.bet-flash-green {
+  border-color: #00ffcc !important;
+  box-shadow: 0 0 15px #00ffcc !important;
+}
+.bet-flash-red {
+  border-color: #ff0055 !important;
+  box-shadow: 0 0 15px #ff0055 !important;
+}
+
+/* 3D Arcadesko Neonsko SPIN Dugme */
+#spin-btn {
+  background: radial-gradient(circle at 50% 30%, rgba(255, 0, 222, 0.25) 0%, rgba(20, 0, 25, 0.85) 100%) !important;
+  border: 2px solid var(--electric-color) !important;
+  box-shadow: 
+    0 0 20px var(--electric-color),
+    inset 0 2px 4px rgba(255, 255, 255, 0.4),
+    inset 0 -4px 10px rgba(0, 0, 0, 0.8),
+    0 6px 15px rgba(0, 0, 0, 0.8) !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 8px var(--electric-color), 0 0 18px var(--electric-color);
+  letter-spacing: 3px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#spin-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), transparent);
+  border-radius: 14px 14px 0 0;
+  pointer-events: none;
+}
+#spin-btn:hover {
+  filter: brightness(1.2);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 0 30px var(--electric-color),
+    inset 0 2px 6px rgba(255, 255, 255, 0.6),
+    inset 0 -4px 12px rgba(0, 0, 0, 0.8),
+    0 10px 25px rgba(0, 0, 0, 0.9) !important;
+}
+#spin-btn:active {
+  transform: translateY(2px) scale(0.98);
+  box-shadow: 
+    0 0 10px var(--electric-color),
+    inset 0 4px 12px rgba(0, 0, 0, 0.9) !important;
+}
+
+.btn-glow {
+  animation: pulse-spin-btn 1.6s infinite ease-in-out;
+}
+@keyframes pulse-spin-btn {
+  0%, 100% { box-shadow: 0 0 15px var(--electric-color), inset 0 2px 4px rgba(255, 255, 255, 0.4); }
+  50% { box-shadow: 0 0 35px var(--electric-color), 0 0 15px var(--electric-secondary), inset 0 2px 8px rgba(255, 255, 255, 0.7); }
+}
+
+/* BIG WIN TICKER OVERLAY */
+#big-win-ticker-modal {
+  background: radial-gradient(circle, rgba(20, 0, 30, 0.96) 0%, rgba(0, 0, 0, 0.98) 100%);
+  cursor: pointer;
+}
+.ticker-title {
+  font-family: 'Monoton', cursive;
+  font-size: clamp(2rem, 8vw, 4.5rem);
+  text-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+  letter-spacing: 3px;
+  animation: ticker-zoom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes ticker-zoom {
+  0% { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.ticker-counter {
+  font-family: 'Orbitron', sans-serif;
+  font-size: clamp(2.5rem, 10vw, 5.5rem);
+  font-weight: 900;
+  text-shadow: 0 0 25px #ffffff, 0 0 50px currentColor;
+  font-variant-numeric: tabular-nums;
+}
+
+/* NEON LIGHTNING STRIKE EFFECT */
+.lightning-flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 255, 255, 0.45);
+  box-shadow: inset 0 0 80px #00ffff, 0 0 60px #ffffff;
+  pointer-events: none;
+  z-index: 35;
+  animation: flash-lightning 0.4s ease-out forwards;
+}
+@keyframes flash-lightning {
+  0% { opacity: 1; transform: scaleY(1.05); }
+  40% { opacity: 0.3; }
+  60% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+.expanding-wild-reel {
+  border: 3px solid #ffffff !important;
+  box-shadow: 0 0 35px #00ffff, inset 0 0 20px #00ffff !important;
+  animation: wild-glow 0.8s infinite alternate !important;
+}
+@keyframes wild-glow {
+  from { filter: drop-shadow(0 0 8px #00ffff); }
+  to { filter: drop-shadow(0 0 25px #ff00de); }
+}
+
+/* Turbo i Autospin dugmad */
+.speed-btn-active {
+  background: #ff00de !important;
+  color: #000 !important;
+  border-color: #ff00de !important;
+  box-shadow: 0 0 15px #ff00de !important;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.92);
+  z-index: 50;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+/* Shooter Bonus */
+#bonus-game-modal {
+  background: radial-gradient(circle, #250015 0%, #000000 100%);
+  cursor: none;
+}
+#custom-cursor {
+  position: fixed;
+  width: 50px; height: 50px;
+  border: 2px solid #00ffff;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #00ffff, inset 0 0 10px #00ffff;
+  pointer-events: none;
+  z-index: 100;
+  transform: translate(-50%, -50%);
+  display: none;
+}
+#custom-cursor::before, #custom-cursor::after {
+  content: ''; position: absolute; background: #00ffff;
+}
+#custom-cursor::before { width: 30px; height: 2px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+#custom-cursor::after { width: 2px; height: 30px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+.fruit-carrier { position: absolute; top: 50%; left: 50%; width: 0; height: 0; }
+.fruit-target {
+  position: absolute; width: 75px; height: 75px; margin-top: -37px; margin-left: -37px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: none; pointer-events: auto; animation: orbit-fly 4.5s ease-out forwards;
+}
+.fruit-target svg { width: 100%; height: 100%; filter: drop-shadow(0 0 10px currentColor); }
+@keyframes orbit-fly {
+  0% { transform: translateY(0) scale(0.1); opacity: 0; }
+  10% { opacity: 1; }
+  20% { transform: translateY(-180px) scale(1); }
+  80% { transform: translateY(-180px) scale(1); opacity: 1; }
+  100% { transform: translateY(-380px) scale(0); opacity: 0; }
+}
+
+.bonus-score-pop {
+  position: absolute;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 26px;
+  animation: float-up 0.8s forwards;
+  pointer-events: none;
+  text-shadow: 0 0 10px currentColor;
+  z-index: 20;
+}
+@keyframes float-up {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  100% { transform: translateY(-50px) scale(1.4); opacity: 0; }
+}
+
+/* Responsivnost za manje ekrane i telefone */
+@media (max-width: 640px) {
+  :root {
+    --symbol-height: clamp(45px, 14vh, 85px);
+    --reel-width: clamp(50px, 18vw, 85px);
+  }
+}
+
+/* ========================================================
+   CYBERPUNK ARCADE JACKPOT WHEEL STYLING
+   ======================================================== */
+.roulette-cabinet-container {
+  box-shadow: 
+    0 0 60px rgba(255, 215, 0, 0.4),
+    0 0 120px rgba(255, 0, 222, 0.25),
+    inset 0 0 40px rgba(0, 0, 0, 0.95);
+  animation: cabinet-entrance 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes cabinet-entrance {
+  0% { transform: scale(0.7) translateY(40px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+/* Chasing neon bulbs ring */
+.roulette-lights-ring {
+  background: radial-gradient(circle, transparent 65%, rgba(0, 0, 0, 0.8) 100%);
+  box-shadow: 
+    0 0 25px rgba(255, 215, 0, 0.5),
+    inset 0 0 25px rgba(0, 255, 255, 0.4);
+  animation: bulbs-chase 1.5s infinite linear;
+}
+
+@keyframes bulbs-chase {
+  0% { border-color: #ffd700; box-shadow: 0 0 30px #ffd700, inset 0 0 20px #00ffff; }
+  50% { border-color: #ff00de; box-shadow: 0 0 35px #ff00de, inset 0 0 25px #ffd700; }
+  100% { border-color: #ffd700; box-shadow: 0 0 30px #ffd700, inset 0 0 20px #00ffff; }
+}
+
+/* Wheel Canvas Holder */
+#wheel-rotator {
+  background: #05000d;
+  border: 4px solid #1f1b2e;
+}
+
+/* Flapper / Pointer Bounce when clicking past pegs */
+.roulette-pointer {
+  transform-origin: top center;
+  transition: transform 0.05s ease-out;
+}
+
+.roulette-pointer.peg-hit {
+  transform: translateX(-50%) rotate(-18deg) scale(1.1);
+}
+
+.roulette-pointer.suspense-wobble {
+  animation: pointer-suspense 0.2s infinite ease-in-out alternate;
+}
+
+@keyframes pointer-suspense {
+  0% { transform: translateX(-50%) rotate(-8deg); }
+  100% { transform: translateX(-50%) rotate(8deg); }
+}
+
+/* Winning segment strobe */
+.wheel-celebrate {
+  animation: win-strobe 0.4s infinite alternate;
+}
+
+@keyframes win-strobe {
+  0% { filter: drop-shadow(0 0 30px #ffd700) brightness(1.2); }
+  100% { filter: drop-shadow(0 0 70px #ff00de) brightness(1.7); }
+}
