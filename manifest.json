@@ -3,7 +3,7 @@
   "short_name": "NeonSlots",
   "description": "Retro Cyberpunk Neon Slot Machine (3 & 5 Reels) with Jackpots & Bonus Games",
   "start_url": "./index.html",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait-primary",
   "background_color": "#000000",
   "theme_color": "#ff00de",

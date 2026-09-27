@@ -81,6 +81,29 @@
     </div>
   </div>
 
+  <!-- PWA AUTO INSTALL PROMPT BANNER -->
+  <div id="pwa-install-banner" class="hidden w-full max-w-xl mx-auto mb-3 z-30 px-3">
+    <div class="flex items-center justify-between p-3 rounded-2xl bg-black/90 border-2 border-fuchsia-500/80 shadow-[0_0_25px_#ff00de] backdrop-blur-md">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-cyan-500 flex items-center justify-center text-lg font-black text-white shadow-md">
+          🎰
+        </div>
+        <div>
+          <div class="text-xs md:text-sm font-black text-white tracking-wide">INSTALL NEON NIGHTS</div>
+          <div class="text-[10px] md:text-[11px] text-cyan-300">Play in true Fullscreen & Offline mode</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="pwa-install-btn" class="px-3.5 py-1.5 bg-gradient-to-r from-pink-500 to-yellow-400 text-black font-black text-xs rounded-xl shadow-[0_0_15px_#ff00de] hover:scale-105 active:scale-95 transition uppercase tracking-wider">
+          INSTALL
+        </button>
+        <button id="pwa-dismiss-btn" class="w-7 h-7 text-gray-400 hover:text-white text-xs font-bold flex items-center justify-center">
+          ✕
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Jackpots Kontejner (Dostupan i u Lobby i u Igri) -->
   <div id="jackpot-container" class="jackpot-container z-10 mb-4"></div>
 

@@ -764,6 +764,48 @@ class SlotMachineApp {
         });
       });
     }
+
+    // Rukovanje automatskim zahtevom za instalaciju (beforeinstallprompt)
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Spreči podrazumevani mini-infobar pregledača
+      e.preventDefault();
+      this.deferredPrompt = e;
+
+      // Prikaz prilagođenog neonskog install banera
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner && !sessionStorage.getItem('pwa_prompt_dismissed')) {
+        banner.classList.remove('hidden');
+        banner.classList.add('flex');
+      }
+
+      const installBtn = document.getElementById('pwa-install-btn');
+      const dismissBtn = document.getElementById('pwa-dismiss-btn');
+
+      installBtn?.addEventListener('click', async () => {
+        if (!this.deferredPrompt) return;
+        banner?.classList.add('hidden');
+        // Pokretanje nativnog install dijaloga
+        this.deferredPrompt.prompt();
+        const { outcome } = await this.deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          this.setMessage("INSTALLING NEON NIGHTS...", "text-green-400 font-bold");
+        }
+        this.deferredPrompt = null;
+      });
+
+      dismissBtn?.addEventListener('click', () => {
+        banner?.classList.add('hidden');
+        sessionStorage.setItem('pwa_prompt_dismissed', 'true');
+      });
+    });
+
+    // Sakrij baner čim se aplikacija instalira
+    window.addEventListener('appinstalled', () => {
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.classList.add('hidden');
+      this.deferredPrompt = null;
+      this.setMessage("APP INSTALLED SUCCESSFULLY!", "text-cyan-400 font-bold");
+    });
   }
 
   bindEvents() {
