@@ -16,12 +16,13 @@ A high-performance, responsive Progressive Web Application (PWA) arcade slot cab
 - **Kaskadni Mehanizam & Množioci:** Dobitni simboli eksplodiraju i prave mesto novim padajućim simbolima. Svaka uzastopna kaskada penje multiplikator (`x1 ➔ x2 ➔ x3 ➔ x5 ➔ x10 ➔ x15 ➔ x20 ➔ x25`).
 - **Free Spins Režim (Sticky Multiplier):** 3+ Scatter simbola dodeljuju 10 besplatnih spinova u kojima multiplikator nikada ne pada, već se samo akumulira.
 - **Cyber Jackpot Wheel (Progresivni točak):**
-  - Nano, Micro i Mini "Must-Drop" bazeni koji rastu sa svakim spinom.
-  - Fizika točka sa 10 segmenata (do `x20` Jackpot), svetlosnim neonskim prstenom, mehaničkim flapper pinom i audio klikovima.
-  - Dramatična suspense faza usporavanja u poslednjoj sekundi.
+  - **Sistem Energije & Ciljeva:** Točak se otključava akumulacijom energije (50 spinova ili rešavanjem dnevnih misija) ili dostizanjem kalibrisanih Nano, Micro i Mega "Must-Drop" limita.
+  - **Vremenski Prozor Dostupnosti (Claim Window):** Kada se otključa, igrač dobija neonski baner sa tajmerom (35 sekundi) da samostalno pokrene točak, bez nasilnog prekidanja spina.
+  - Fizika točka sa 10 segmenata (do `x20` Jackpot), svetlosnim neonskim prstenom, mehaničkim flapper pinom i audio klikovima sa dramatičnom suspense fazom usporavanja.
 - **Super Shooter Bonus:** Interaktivna arkadna mini-igra gađanja letećih neonskih voćkica.
-- **Gamble Funkcija:** Klasično udvostručavanje dobitka (Crveno / Crno).
-- **Progresija & Dnevne Misije:** XP nivoi, nagradni krediti i promena neonskih plazma tema (Cyberpunk, Toxic Acid, Solar Gold).
+- **Gamble Funkcija (Crveno / Crno):** Udvostručavanje sa vremenskim prozorom od 5 sekundi, dostupno na dobicima do 25x ulog, uz limit od maksimalno 5 uzastopnih pogađanja (streak).
+- **Progresija & Dnevne Misije:** XP nivoi, nagradni krediti (+10 Wheel Energy po završenoj misiji) i promena neonskih plazma tema (Cyberpunk, Toxic Acid, Solar Gold).
+- **Kriptografski RNG & Asimetrični Kolutovi:** `window.crypto.getRandomValues` algoritam sa sertifikovanim matematičkim modelom (~96.2% RTP) i posebnim trakama za svaki kabinet.
 - **Web Audio API Sintisajzer:** Proceduralni zvučni efekti u realnom vremenu (arpeggiatori, bas udarci, mehanički klikovi) bez zavisnosti od eksternih MP3 datoteka.
 - **PWA & Offline Podrška:** Service Worker sa Network-First keširanjem omogućava instalaciju na Android/iOS i offline igranje.
 
@@ -39,11 +40,13 @@ A high-performance, responsive Progressive Web Application (PWA) arcade slot cab
 - **Cascading Tumbling Reels:** Winning combinations explode and disappear; new symbols drop from above to trigger chain reactions with an escalating multiplier trail up to `x25`.
 - **Sticky Multiplier Free Spins:** Triggered by 3+ Scatters. Multiplier values persist across all free spins for massive win potential.
 - **Cyber Jackpot Wheel:**
-  - 3-tier progressive jackpots (Nano, Micro, Mini) with dynamic hot-zone alerts.
+  - **Milestone Energy Progression:** Earn wheel spins by charging the Cyber Energy Meter (50 spins or mission rewards) or by hitting Nano, Micro, and Mega Must-Drop limits.
+  - **Timed Claim Window (35s):** Alerts players when ready and lets them trigger the wheel whenever they wish within the expiration window.
   - 10 multiplier wedges up to `x20`, animated neon lighting ring, flapper peg bounce animation, and procedural ticking audio with suspense slowdown.
 - **Super Shooter Mini-Game:** Arcade point-and-shoot mini-game targeting flying neon fruit carriers.
-- **Gamble (Double or Nothing):** Fair 50/50 red vs black card gamble.
-- **Daily Quests & Player Progression:** Level progression with XP bars, milestone rewards, and switchable plasma color themes.
+- **Gamble (Double or Nothing):** Fair 50/50 red vs black card gamble with a 5-second decision window and a 5-round maximum streak cap.
+- **Daily Quests & Player Progression:** Level progression with XP bars, milestone rewards (+10 Wheel Energy on quest completion), and switchable plasma color themes.
+- **Cryptographic RNG:** Uses `window.crypto.getRandomValues` and cabinet-specific asymmetric reel strips targeting ~96.2% commercial RTP.
 - **Pure Web Audio Synthesizer:** Zero external audio assets required; all sound effects are synthesized on the fly via oscillators, gain envelopes, and filters.
 - **Progressive Web App (PWA):** Installable to home screens on mobile and desktop, supporting high-DPI displays and offline capabilities.
 
