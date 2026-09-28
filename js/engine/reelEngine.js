@@ -157,24 +157,33 @@ class ReelEngine {
       Sound.playMultiplierRise(this.scatterCountSoFar * 2); // Specijalni ding za scatter
     }
 
-    // ANTICIPATION TRIGGER: Ako smo pogodili 2 scatter-a, a ima još kolutova koji se vrte
+    // ANTICIPATION TRIGGER: Ako smo pogodili 2 scatter-a (ili bonusa), a ima još kolutova koji se vrte
     if (this.scatterCountSoFar >= 2) {
+      let isAnticipatingAny = false;
       this.reels.forEach((r, idx) => {
         if (!r.stopped && idx > colIdx) {
+          isAnticipatingAny = true;
           r.windowEl.classList.add('reel-anticipating');
           // Produžavamo vreme vrtenja za dramatičan slow-mo efekat
           clearTimeout(r.stopTimer);
           r.stopTimer = setTimeout(() => {
             if (!r.stopped) this.stopReel(idx);
-          }, 1400 + ((idx - colIdx) * 600));
+          }, 1800 + ((idx - colIdx) * 900));
         }
       });
+
+      if (isAnticipatingAny) {
+        document.body.classList.add('anticipation-active');
+        Sound.startAnticipationLoop();
+      }
     }
 
     // Proveri da li su svi zaustavljeni
     const allStopped = this.reels.every(r => r.stopped);
     if (allStopped) {
       this.isSpinning = false;
+      document.body.classList.remove('anticipation-active');
+      Sound.stopAnticipationLoop();
       this.reels.forEach(r => r.windowEl.classList.remove('reel-anticipating'));
       if (this.onAllStoppedCallback) {
         setTimeout(() => {
@@ -195,44 +204,41 @@ class ReelEngine {
   }
 
   clearWinningEffects() {
+    this.stopWinCycle();
     this.svg.innerHTML = '';
     this.container.querySelectorAll('.symbol-box').forEach(el => {
-      el.classList.remove('symbol-dim', 'symbol-win');
+      el.classList.remove('symbol-dim', 'symbol-win', 'symbol-line-active');
     });
   }
 
-  // Crtanje isplatnih linija i highlight simbola
-  drawWins(winningLines) {
+  // Crtanje isplatnih linija i pokretanje sekvencijalnog line-by-line pregleda
+  drawWins(winningLines, onLineDisplayed = null) {
+    this.clearWinningEffects();
+    if (!winningLines || winningLines.length === 0) return;
+
+    this.winningLines = winningLines;
+    this.onLineDisplayed = onLineDisplayed;
+
+    // 1. Zatamni sve simbole u pozadini
     this.container.querySelectorAll('.symbol-box').forEach(el => {
       el.classList.add('symbol-dim');
     });
 
+    // 2. Nacrtaj sve dobitne linije zbirno u prvom trenutku
+    this.renderAllLinesOverlay(winningLines);
+
+    // 3. Pokreni sekvencijalno Line-by-Line listanje nakon inicijalnog prikaza
+    if (winningLines.length > 1) {
+      this.winCycleTimer = setTimeout(() => {
+        this.startWinCycle(0);
+      }, 700);
+    }
+  }
+
+  renderAllLinesOverlay(winningLines) {
+    this.svg.innerHTML = '';
     winningLines.forEach(win => {
-      const color = win.line.color;
-      const coords = win.line.coords;
-      const pathD = this.calculatePathString(coords);
-
-      // 1. Spoljni neonski plazma sjaj (Aura)
-      const glowPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      glowPath.setAttribute("d", pathD);
-      glowPath.setAttribute("stroke", color);
-      glowPath.setAttribute("stroke-width", "8");
-      glowPath.setAttribute("fill", "none");
-      glowPath.setAttribute("filter", `drop-shadow(0 0 12px ${color})`);
-      glowPath.setAttribute("stroke-linecap", "round");
-      glowPath.setAttribute("opacity", "0.85");
-      this.svg.appendChild(glowPath);
-
-      // 2. Unutrašnje belo lasersko jezgro (Core beam)
-      const corePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      corePath.setAttribute("d", pathD);
-      corePath.setAttribute("stroke", "#ffffff");
-      corePath.setAttribute("stroke-width", "3");
-      corePath.setAttribute("fill", "none");
-      corePath.setAttribute("stroke-linecap", "round");
-      this.svg.appendChild(corePath);
-
-      // Highlight samo poklopljenih simbola
+      this.drawSinglePath(win.line.coords, win.line.color, 0.75);
       win.matchedCoords.forEach(([c, r]) => {
         const reel = this.reels[c];
         if (reel && reel.tapeEl.children[r]) {
@@ -242,6 +248,71 @@ class ReelEngine {
         }
       });
     });
+  }
+
+  drawSinglePath(coords, color, opacity = 1) {
+    const pathD = this.calculatePathString(coords);
+
+    // Spoljni neonski plazma sjaj (Aura)
+    const glowPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    glowPath.setAttribute("d", pathD);
+    glowPath.setAttribute("stroke", color);
+    glowPath.setAttribute("stroke-width", "8");
+    glowPath.setAttribute("fill", "none");
+    glowPath.setAttribute("filter", `drop-shadow(0 0 14px ${color})`);
+    glowPath.setAttribute("stroke-linecap", "round");
+    glowPath.setAttribute("opacity", opacity.toString());
+    this.svg.appendChild(glowPath);
+
+    // Unutrašnje lasersko jezgro
+    const corePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    corePath.setAttribute("d", pathD);
+    corePath.setAttribute("stroke", "#ffffff");
+    corePath.setAttribute("stroke-width", "3.5");
+    corePath.setAttribute("fill", "none");
+    corePath.setAttribute("stroke-linecap", "round");
+    this.svg.appendChild(corePath);
+  }
+
+  startWinCycle(index = 0) {
+    if (!this.winningLines || this.winningLines.length <= 1) return;
+    const currentWin = this.winningLines[index % this.winningLines.length];
+
+    // Očisti prethodne linije
+    this.svg.innerHTML = '';
+    this.container.querySelectorAll('.symbol-box').forEach(el => {
+      el.classList.add('symbol-dim');
+      el.classList.remove('symbol-win', 'symbol-line-active');
+    });
+
+    // Nacrtaj samo ovu liniju
+    this.drawSinglePath(currentWin.line.coords, currentWin.line.color, 1);
+
+    // Osvetli samo simbole ove linije
+    currentWin.matchedCoords.forEach(([c, r]) => {
+      const reel = this.reels[c];
+      if (reel && reel.tapeEl.children[r]) {
+        const symBox = reel.tapeEl.children[r];
+        symBox.classList.remove('symbol-dim');
+        symBox.classList.add('symbol-win', 'symbol-line-active');
+      }
+    });
+
+    if (this.onLineDisplayed) {
+      this.onLineDisplayed(currentWin, (index % this.winningLines.length) + 1, this.winningLines.length);
+    }
+
+    // Prelazak na sledeću liniju
+    this.winCycleTimer = setTimeout(() => {
+      this.startWinCycle(index + 1);
+    }, 1100);
+  }
+
+  stopWinCycle() {
+    if (this.winCycleTimer) {
+      clearTimeout(this.winCycleTimer);
+      this.winCycleTimer = null;
+    }
   }
 
   calculatePathString(coords) {

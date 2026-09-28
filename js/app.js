@@ -250,7 +250,8 @@ class SlotMachineApp {
     // Jackpot doprinos po spinu
     this.jackpotManager.processBet(this.currentBet, 1);
 
-    // Audio
+    // Audio & ambient background synthwave loop
+    Sound.startAmbientMusic();
     Sound.playSpinStart();
 
     // UI stanje dugmeta
@@ -327,8 +328,10 @@ class SlotMachineApp {
       this.updateUI();
       this.lastWinEl.innerText = this.lastWin;
 
-      // Zvuk dobitka i highlight
-      this.reels.drawWins(result.winningLines);
+      // Zvuk dobitka i highlight sa sekvencijalnim ispisom linija
+      this.reels.drawWins(result.winningLines, (win, lineIdx, totalLines) => {
+        this.setMessage(`LINE ${lineIdx}/${totalLines}: ${win.line.name.toUpperCase()} (+${win.payout})`, "text-cyan-300 font-bold");
+      });
       const isBigWin = multipliedWin >= this.currentBet * 4;
       Sound.playWin(isBigWin);
 
@@ -910,6 +913,57 @@ class SlotMachineApp {
     // Spin Roulette dugme
     document.getElementById('spin-roulette-btn')?.addEventListener('click', () => {
       this.bonusManager.spinRouletteWheel();
+    });
+
+    // Tastaturne prečice (Desktop Casino Experience)
+    window.addEventListener('keydown', (e) => {
+      // Ignoriši ako je otvoren input
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+      // Spacebar ili Enter za Spin / Stop / Skip
+      if (e.code === 'Space' || e.code === 'Enter') {
+        e.preventDefault();
+        if (this.bigWinRolling) {
+          this.fastForwardBigWin();
+          return;
+        }
+        const finalModal = document.getElementById('final-win-modal');
+        if (finalModal && finalModal.style.display === 'flex') {
+          this.closeFinalModal();
+          return;
+        }
+        // Ako je slot prikaz aktivan
+        if (this.slotGameView && !this.slotGameView.classList.contains('hidden')) {
+          this.spin();
+        }
+      }
+
+      // T = Toggle Turbo
+      if (e.key === 't' || e.key === 'T') {
+        this.toggleTurbo();
+      }
+
+      // A = Toggle Autospin
+      if (e.key === 'a' || e.key === 'A') {
+        this.toggleAutospin();
+      }
+
+      // Strelice gore/dole = Promena uloga
+      if (e.code === 'ArrowUp') {
+        e.preventDefault();
+        this.changeBet(SlotConfig.betStep);
+      }
+      if (e.code === 'ArrowDown') {
+        e.preventDefault();
+        this.changeBet(-SlotConfig.betStep);
+      }
+
+      // Escape = zatvaranje modalnih prozora
+      if (e.code === 'Escape') {
+        document.querySelectorAll('.modal-overlay').forEach(m => {
+          if (m.id !== 'big-win-ticker-modal') m.style.display = 'none';
+        });
+      }
     });
   }
 }

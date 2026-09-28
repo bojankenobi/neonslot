@@ -19,6 +19,12 @@ class SoundController {
 
   toggle() {
     this.enabled = !this.enabled;
+    if (!this.enabled) {
+      this.stopAmbientMusic();
+      this.stopAnticipationLoop();
+    } else {
+      this.startAmbientMusic();
+    }
     return this.enabled;
   }
 
@@ -282,6 +288,99 @@ class SoundController {
 
     if ('vibrate' in navigator) {
       navigator.vibrate(10);
+    }
+  }
+
+  // Napeta pulsirajuća anticipation audio petlja (Heartbeat + rising riser)
+  startAnticipationLoop() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+    this.stopAnticipationLoop();
+
+    let step = 0;
+    this.anticipationInterval = setInterval(() => {
+      if (!this.enabled || !this.ctx) return;
+      const t = this.ctx.currentTime;
+
+      // Napeti pulsirajući bas
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      const freq = 130 + (step * 8);
+      osc.frequency.setValueAtTime(freq, t);
+      osc.frequency.exponentialRampToValueAtTime(45, t + 0.12);
+
+      gain.gain.setValueAtTime(0.25, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(t);
+      osc.stop(t + 0.12);
+
+      if ('vibrate' in navigator) {
+        navigator.vibrate(15);
+      }
+      step++;
+    }, 140);
+  }
+
+  stopAnticipationLoop() {
+    if (this.anticipationInterval) {
+      clearInterval(this.anticipationInterval);
+      this.anticipationInterval = null;
+    }
+  }
+
+  // Atmosferična Synthwave Outrun pozadinska muzička petlja (generisana u Web Audio API)
+  startAmbientMusic() {
+    if (!this.enabled || this.musicPlaying) return;
+    this.init();
+    if (!this.ctx) return;
+    this.musicPlaying = true;
+
+    const chords = [
+      [65.41, 130.81, 196.00], // C2, C3, G3
+      [58.27, 116.54, 174.61], // Bb1, Bb2, F3
+      [43.65, 87.31, 130.81],  // F1, F2, C3
+      [49.00, 98.00, 146.83]   // G1, G2, D3
+    ];
+    let chordIdx = 0;
+
+    this.musicInterval = setInterval(() => {
+      if (!this.enabled || !this.ctx || !this.musicPlaying) return;
+      const t = this.ctx.currentTime;
+      const currentChord = chords[chordIdx % chords.length];
+
+      // Duboki synth bas puls
+      currentChord.forEach((freq, i) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = i === 0 ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime(freq, t);
+
+        const vol = i === 0 ? 0.04 : 0.02;
+        gain.gain.setValueAtTime(vol, t);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 0.48);
+      });
+
+      chordIdx++;
+    }, 480);
+  }
+
+  stopAmbientMusic() {
+    this.musicPlaying = false;
+    if (this.musicInterval) {
+      clearInterval(this.musicInterval);
+      this.musicInterval = null;
     }
   }
 }

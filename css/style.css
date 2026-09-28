@@ -541,14 +541,30 @@ body {
 @keyframes pulse-scatter { 0% { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 0 8px #00ffff); } 100% { transform: scale(1.1) rotate(3deg); filter: drop-shadow(0 0 24px #00ffff) drop-shadow(0 0 10px #ff00de); } }
 
 /* Anticipation režim za kolut koji čeka 3. scatter */
+.anticipation-active .reel-container-outer {
+  box-shadow: 0 0 50px rgba(0, 255, 255, 0.6), inset 0 0 40px rgba(0, 255, 255, 0.3) !important;
+}
+
+.anticipation-active .electric-box::before {
+  border-color: #00ffff !important;
+  box-shadow: 0 0 45px #00ffff, 0 0 80px #00ffff !important;
+  animation: electric-anticipation 0.25s infinite alternate !important;
+}
+
+@keyframes electric-anticipation {
+  from { filter: url(#turbulent-displace) brightness(1.2) drop-shadow(0 0 20px #00ffff); }
+  to { filter: url(#turbulent-displace) brightness(2) drop-shadow(0 0 40px #ff00de); }
+}
+
 .reel-anticipating {
-  border: 2px solid #00ffff !important;
-  box-shadow: 0 0 25px #00ffff, inset 0 0 15px rgba(0, 255, 255, 0.4) !important;
-  animation: anticipation-pulse 0.4s infinite alternate !important;
+  border: 2.5px solid #00ffff !important;
+  box-shadow: 0 0 35px #00ffff, inset 0 0 25px rgba(0, 255, 255, 0.6) !important;
+  animation: anticipation-pulse 0.35s infinite alternate !important;
+  z-index: 25;
 }
 @keyframes anticipation-pulse {
-  from { filter: brightness(1); }
-  to { filter: brightness(1.6); }
+  from { filter: brightness(1) drop-shadow(0 0 10px #00ffff); }
+  to { filter: brightness(1.8) drop-shadow(0 0 30px #ff00de); }
 }
 
 /* Free spins neonski okvir mašine */
@@ -579,7 +595,7 @@ body {
   100% { transform: translateY(0); }
 }
 
-.symbol-dim { opacity: 0.12; filter: grayscale(0.85) blur(0.5px); transition: 0.3s; }
+.symbol-dim { opacity: 0.12; filter: grayscale(0.85) blur(0.5px); transition: opacity 0.25s, filter 0.25s; }
 
 /* Dobitni simboli: pulsirajući neonski stakleni okvir i dvoslojni blesak */
 .symbol-win {
@@ -599,6 +615,14 @@ body {
 @keyframes win-box-glow {
   from { opacity: 0.6; transform: scale(0.96); filter: drop-shadow(0 0 4px currentColor); }
   to { opacity: 1; transform: scale(1.02); filter: drop-shadow(0 0 16px #ffffff); }
+}
+
+/* Pojedinačna aktivna dobitna linija tokom line-by-line cycling pregleda */
+.symbol-line-active {
+  z-index: 22 !important;
+  transform: scale(1.08);
+  filter: brightness(1.4) drop-shadow(0 0 18px currentColor) !important;
+  transition: transform 0.2s, filter 0.2s;
 }
 
 .symbol-win svg {
