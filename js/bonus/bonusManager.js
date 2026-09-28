@@ -425,13 +425,41 @@ class BonusManager {
     }, 1000);
   }
 
-  // --- GAMBLE (CRVENO / CRNO) ---
+  // --- GAMBLE (CRVENO / CRNO SA OGRANIČENJEM NA 5 RUNDI) ---
   openGamble(amount) {
+    // Ako je aktivan timer na glavnom ekranu, zaustavljamo ga
+    if (this.slot && this.slot.clearGambleTimer) {
+      this.slot.clearGambleTimer();
+    }
     this.currentGambleAmount = amount;
+    this.gambleStreak = 0;
+    this.maxGambleStreak = 5;
+
     const modal = document.getElementById('gamble-modal');
     const amtEl = document.getElementById('gamble-amount');
     if (amtEl) amtEl.innerText = amount.toFixed(2);
+    this.updateGambleStreakUI();
     if (modal) modal.style.display = 'flex';
+  }
+
+  updateGambleStreakUI() {
+    const streakEl = document.getElementById('gamble-streak-text');
+    if (streakEl) {
+      streakEl.innerText = `${this.gambleStreak + 1} / ${this.maxGambleStreak}`;
+    }
+    const dotsContainer = document.getElementById('gamble-streak-dots');
+    if (dotsContainer) {
+      const dots = dotsContainer.children;
+      for (let i = 0; i < dots.length; i++) {
+        if (i < this.gambleStreak) {
+          dots[i].className = 'w-2.5 h-2.5 rounded-full border border-yellow-400 bg-yellow-400 shadow-[0_0_8px_#ffd700]';
+        } else if (i === this.gambleStreak) {
+          dots[i].className = 'w-2.5 h-2.5 rounded-full border-2 border-yellow-400 bg-yellow-500/40 animate-pulse';
+        } else {
+          dots[i].className = 'w-2.5 h-2.5 rounded-full border border-gray-700 bg-black';
+        }
+      }
+    }
   }
 
   playGamble(choice) {
@@ -441,10 +469,22 @@ class BonusManager {
 
     if (win) {
       this.currentGambleAmount *= 2;
+      this.gambleStreak++;
       if (amtEl) amtEl.innerText = this.currentGambleAmount.toFixed(2);
       Sound.playWin(true);
       if (typeof confetti === 'function') {
         confetti({ particleCount: 60, spread: 50, colors: ['#ffd700', '#ff00de'] });
+      }
+
+      // Ako je igrač dostigao maksimalan broj rundi (5 uzastopnih pogađanja), automatski isplaćujemo
+      if (this.gambleStreak >= this.maxGambleStreak) {
+        this.updateGambleStreakUI();
+        setTimeout(() => {
+          this.closeGamble(true);
+          this.slot.showFinalModal("MAX GAMBLE REACHED (5/5)!", this.currentGambleAmount);
+        }, 800);
+      } else {
+        this.updateGambleStreakUI();
       }
     } else {
       this.currentGambleAmount = 0;

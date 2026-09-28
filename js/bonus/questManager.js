@@ -107,11 +107,17 @@ class QuestManager {
       this.slot.balance += q.reward;
       this.slot.updateUI();
       this.addXP(50);
+      // Završena misija puni +10 poena na Cyber Wheel energiju!
+      if (this.slot.incrementWheelEnergy) {
+        for (let i = 0; i < 10; i++) {
+          this.slot.incrementWheelEnergy();
+        }
+      }
       Sound.playWin(true);
       if (typeof confetti === 'function') {
         confetti({ particleCount: 100, spread: 60, origin: { y: 0.6 } });
       }
-      this.slot.setMessage(`MISSION COMPLETED: +${q.reward} CREDITS!`, 'text-green-400 font-bold animate-pulse');
+      this.slot.setMessage(`MISSION COMPLETED: +${q.reward} CREDITS & +10 WHEEL ENERGY!`, 'text-green-400 font-bold animate-pulse');
       this.saveState();
       this.renderUI();
     }

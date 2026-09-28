@@ -96,10 +96,10 @@ const SlotConfig = {
   spinDurationBase: 1200,
   reelStopDelay: 300,
 
-  // RTP cilj: ~96%
+  // RTP & Jackpot Config
   jackpots: [
-    { id: 'nano',  name: 'NANO',  currentVal: 49.10, targetVal: 49.10, limit: 50.00,  color: '#00ffcc', rate: 0.04 },
-    { id: 'micro', name: 'MICRO', currentVal: 180.25, targetVal: 180.25, limit: 250.00, color: '#ff00de', rate: 0.02 },
-    { id: 'mini',  name: 'MINI',  currentVal: 550.00, targetVal: 550.00, limit: 1000.00, color: '#ffd700', rate: 0.01 }
+    { id: 'nano',  name: 'NANO',  currentVal: 120.00, targetVal: 120.00, limit: 350.00,  color: '#00ffcc', rate: 0.008 },
+    { id: 'micro', name: 'MICRO', currentVal: 600.00, targetVal: 600.00, limit: 1800.00, color: '#ff00de', rate: 0.004 },
+    { id: 'mini',  name: 'MEGA',  currentVal: 2200.00, targetVal: 2200.00, limit: 6000.00, color: '#ffd700', rate: 0.002 }
   ]
 };

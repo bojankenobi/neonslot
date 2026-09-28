@@ -50,7 +50,9 @@ class SlotMachineApp {
     this.lastWinEl = document.getElementById('last-win');
     this.betEl = document.getElementById('bet-amount');
     this.spinBtn = document.getElementById('spin-btn');
+    this.gambleBtnWrapper = document.getElementById('gamble-btn-wrapper');
     this.gambleBtn = document.getElementById('gamble-btn');
+    this.gambleTimerText = document.getElementById('gamble-timer-text');
     this.msgEl = document.getElementById('message');
     this.betContainer = document.getElementById('bet-control-container');
     this.multiplierEl = document.getElementById('current-multiplier');
@@ -63,12 +65,27 @@ class SlotMachineApp {
     this.bigWinModal = document.getElementById('big-win-ticker-modal');
     this.bigWinTitleEl = document.getElementById('big-win-tier-title');
     this.bigWinCounterEl = document.getElementById('big-win-rolling-counter');
+
+    // Cyber Wheel Energy Milestone State (Zahteva 50 spinova ili Jackpot Limit)
+    this.wheelEnergy = 0;
+    this.wheelEnergyMax = 50;
+    this.wheelUnlocked = false;
+    this.wheelExpiresAt = 0;
+    this.wheelCountdownInterval = null;
+    this.wheelEnergyText = document.getElementById('wheel-energy-text');
+    this.wheelEnergyFill = document.getElementById('wheel-energy-fill');
+    this.wheelUnlockedBanner = document.getElementById('wheel-unlocked-banner');
+    this.wheelCountdownText = document.getElementById('wheel-countdown-text');
+
+    // Gamble Opportunity Window (5s timer)
+    this.gambleTimer = null;
+    this.gambleSecondsLeft = 0;
   }
 
   init() {
-    // Inicijalizacija jackpotova
+    // Inicijalizacija jackpotova (Must-Drop puni i otključava Cyber Wheel)
     this.jackpotManager.init((jackpot, prize) => {
-      this.bonusManager.openRoulette(jackpot, prize);
+      this.unlockCyberWheel(jackpot, prize);
     });
 
     // Inicijalizacija sistema zadataka i tema
@@ -239,13 +256,18 @@ class SlotMachineApp {
     this.lastWin = 0;
     this.updateUI();
     this.lastWinEl.innerText = "0";
-    this.gambleBtn.classList.add('hidden');
+    this.clearGambleTimer();
     this.isSpinning = true;
     this.cascadeStep = 0;
     this.updateMultiplierUI();
 
     // Notifikacija za nivo i zadatke
     this.questManager.onSpinPlayed();
+
+    // Cyber Wheel Energy Milestone napredak (samo u regularnoj igri)
+    if (!this.freeSpinsActive) {
+      this.incrementWheelEnergy();
+    }
 
     // Jackpot doprinos po spinu
     this.jackpotManager.processBet(this.currentBet, 1);
@@ -379,13 +401,21 @@ class SlotMachineApp {
         if (this.lastWin > 0) {
           this.setMessage(`WIN: ${this.lastWin}!`, "text-yellow-300 font-bold");
           this.questManager.onWinRecorded(this.lastWin);
-          if (!this.freeSpinsActive && this.autoSpinCount === 0) {
-            this.gambleBtn.classList.remove('hidden');
+
+          // Uslov za Gamble (Karte):
+          // 1. Nisu aktivni besplatni spinovi
+          // 2. Nije uključen autospin
+          // 3. Dobitak je umeren (<= 25x trenutni ulog) kako ne bi rušio ekonomiju
+          if (!this.freeSpinsActive && this.autoSpinCount === 0 && this.lastWin <= this.currentBet * 25) {
+            this.startGambleOpportunity(this.lastWin);
+          } else {
+            this.clearGambleTimer();
           }
           this.jackpotManager.processBet(this.currentBet, 2);
         } else {
           this.setMessage(this.freeSpinsActive ? "FREE SPIN NO WIN" : "SPIN AGAIN", "text-gray-500");
           this.spinBtn.classList.add('btn-glow');
+          this.clearGambleTimer();
         }
 
         this.jackpotManager.checkDrops();
@@ -633,18 +663,138 @@ class SlotMachineApp {
   }
 
   onGambleCollect(amount) {
-    this.gambleBtn.classList.add('hidden');
+    this.clearGambleTimer();
+    this.lastWin = amount;
+    this.updateUI();
+    if (this.lastWinEl) this.lastWinEl.innerText = amount;
     this.setMessage(`COLLECTED: ${amount}`, "text-green-400 font-bold");
   }
 
   onGambleLost() {
+    this.clearGambleTimer();
     this.balance -= this.lastWin;
     if (this.balance < 0) this.balance = 0;
     this.lastWin = 0;
     this.updateUI();
-    this.lastWinEl.innerText = "0";
-    this.gambleBtn.classList.add('hidden');
+    if (this.lastWinEl) this.lastWinEl.innerText = "0";
     this.setMessage("GAMBLE LOST", "text-red-500 font-bold");
+  }
+
+  // --- GAMBLE TIMED OPPORTUNITY (Dostupno 5 sekundi) ---
+  startGambleOpportunity(winAmount) {
+    this.clearGambleTimer();
+    this.gambleSecondsLeft = 5;
+    if (this.gambleTimerText) this.gambleTimerText.innerText = `${this.gambleSecondsLeft}s`;
+    if (this.gambleBtnWrapper) this.gambleBtnWrapper.classList.remove('hidden');
+
+    this.gambleTimer = setInterval(() => {
+      this.gambleSecondsLeft--;
+      if (this.gambleSecondsLeft > 0) {
+        if (this.gambleTimerText) this.gambleTimerText.innerText = `${this.gambleSecondsLeft}s`;
+      } else {
+        this.clearGambleTimer();
+      }
+    }, 1000);
+  }
+
+  clearGambleTimer() {
+    if (this.gambleTimer) {
+      clearInterval(this.gambleTimer);
+      this.gambleTimer = null;
+    }
+    if (this.gambleBtnWrapper) {
+      this.gambleBtnWrapper.classList.add('hidden');
+    }
+  }
+
+  // --- CYBER WHEEL ENERGY & MILESTONE SYSTEM ---
+  incrementWheelEnergy() {
+    if (this.wheelUnlocked) return; // već je otključan, čeka se da igrač zavrti
+
+    this.wheelEnergy++;
+    if (this.wheelEnergy > this.wheelEnergyMax) {
+      this.wheelEnergy = this.wheelEnergyMax;
+    }
+
+    this.updateWheelEnergyUI();
+
+    if (this.wheelEnergy >= this.wheelEnergyMax) {
+      this.unlockCyberWheel();
+    }
+  }
+
+  updateWheelEnergyUI() {
+    if (this.wheelEnergyText) {
+      this.wheelEnergyText.innerText = `${this.wheelEnergy} / ${this.wheelEnergyMax} SPINS`;
+    }
+    if (this.wheelEnergyFill) {
+      const pct = Math.min(100, (this.wheelEnergy / this.wheelEnergyMax) * 100);
+      this.wheelEnergyFill.style.width = `${pct}%`;
+    }
+  }
+
+  unlockCyberWheel(jackpot = null, prize = null) {
+    if (this.wheelUnlocked) return;
+    this.wheelUnlocked = true;
+
+    // Ako je pokrenut preko Jackpota ili skupljene energije
+    this.pendingWheelJackpot = jackpot || { id: 'energy', name: 'CYBER ENERGY', color: '#ffd700' };
+    this.pendingWheelPrize = prize || (this.currentBet * 10); // zagarantovana osnova za točak
+
+    if (this.wheelUnlockedBanner) {
+      this.wheelUnlockedBanner.classList.remove('hidden');
+    }
+
+    Sound.playBonusTrigger();
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 120, spread: 70, origin: { y: 0.3 } });
+    }
+
+    // Vremenski prozor: točak je dostupan 35 sekundi da ga igrač zavrti
+    let secondsLeft = 35;
+    if (this.wheelCountdownText) this.wheelCountdownText.innerText = `${secondsLeft}s`;
+
+    if (this.wheelCountdownInterval) clearInterval(this.wheelCountdownInterval);
+    this.wheelCountdownInterval = setInterval(() => {
+      secondsLeft--;
+      if (this.wheelCountdownText) this.wheelCountdownText.innerText = `${secondsLeft}s`;
+      if (secondsLeft <= 0) {
+        this.expireCyberWheel();
+      }
+    }, 1000);
+  }
+
+  claimCyberWheel() {
+    if (!this.wheelUnlocked) return;
+
+    if (this.wheelCountdownInterval) {
+      clearInterval(this.wheelCountdownInterval);
+      this.wheelCountdownInterval = null;
+    }
+    if (this.wheelUnlockedBanner) {
+      this.wheelUnlockedBanner.classList.add('hidden');
+    }
+
+    this.wheelUnlocked = false;
+    this.wheelEnergy = 0;
+    this.updateWheelEnergyUI();
+
+    // Otvara točak sreće
+    this.bonusManager.openRoulette(this.pendingWheelJackpot, this.pendingWheelPrize);
+  }
+
+  expireCyberWheel() {
+    if (this.wheelCountdownInterval) {
+      clearInterval(this.wheelCountdownInterval);
+      this.wheelCountdownInterval = null;
+    }
+    this.wheelUnlocked = false;
+    this.wheelEnergy = 0;
+    this.updateWheelEnergyUI();
+    if (this.wheelUnlockedBanner) {
+      this.wheelUnlockedBanner.classList.add('hidden');
+    }
+    this.setMessage("CYBER WHEEL EXPIRED! CHARGE IT AGAIN!", "text-gray-500 font-bold");
   }
 
   updateUI() {
