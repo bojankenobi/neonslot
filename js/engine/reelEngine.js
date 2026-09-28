@@ -70,7 +70,8 @@ class ReelEngine {
       grid[c].forEach(sym => {
         const box = document.createElement('div');
         box.className = `symbol-box ${sym.cls}`;
-        box.innerHTML = sym.svg();
+        const mult = sym.wildMultiplier || 1;
+        box.innerHTML = sym.svg(mult);
         reel.tapeEl.appendChild(box);
       });
     });
@@ -138,7 +139,8 @@ class ReelEngine {
     // Postavljamo ciljne simbole za ovaj kolut
     let html = '';
     this.gridState[colIdx].forEach(sym => {
-      html += `<div class="symbol-box ${sym.cls}">${sym.svg()}</div>`;
+      const mult = sym.wildMultiplier || 1;
+      html += `<div class="symbol-box ${sym.cls}">${sym.svg(mult)}</div>`;
     });
     reel.tapeEl.innerHTML = html;
 
@@ -361,7 +363,8 @@ class ReelEngine {
         newGrid[c].forEach(sym => {
           const box = document.createElement('div');
           box.className = `symbol-box ${sym.cls} symbol-drop-in`;
-          box.innerHTML = sym.svg();
+          const mult = sym.wildMultiplier || 1;
+          box.innerHTML = sym.svg(mult);
           reel.tapeEl.appendChild(box);
         });
       });

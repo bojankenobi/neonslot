@@ -265,15 +265,15 @@ class SlotMachineApp {
       this.setMessage("STOP REELS!", "text-yellow-400 animate-pulse");
     }
 
-    // Matematika: generisanje ciljnog rasporeda za trenutni broj koluta
-    let targetGrid = SlotMath.generateSpinResult(this.currentMode, 3);
+    // Matematika: generisanje ciljnog rasporeda za trenutni kabinet (kripto RNG + unikatne trake)
+    let targetGrid = SlotMath.generateSpinResult(this.currentMode, 3, this.currentMachineId);
 
     // SPECIAL MYSTERY EVENT: 8% šanse za Neon Lightning Expanding Wild
     const triggerLightning = Math.random() < 0.08 && !this.freeSpinsActive;
     if (triggerLightning) {
       const luckyCol = Math.floor(Math.random() * this.currentMode);
       for (let r = 0; r < 3; r++) {
-        targetGrid[luckyCol][r] = SlotSymbols.wild;
+        targetGrid[luckyCol][r] = SlotMath.createSymbolInstance('wild', Math.random() < 0.35 ? 2 : 1);
       }
       setTimeout(() => {
         Sound.playLightningStrike();
@@ -363,7 +363,7 @@ class SlotMachineApp {
       const cascadeDelay = this.isTurbo ? 450 : 950;
       setTimeout(() => {
         this.updateMultiplierUI(true);
-        const nextGrid = SlotMath.cascadeGrid(currentGrid, explodedCoords);
+        const nextGrid = SlotMath.cascadeGrid(currentGrid, explodedCoords, this.currentMachineId);
         this.reels.animateCascade(explodedCoords, nextGrid, () => {
           this.handleCascadeStep(nextGrid);
         });

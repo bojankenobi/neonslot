@@ -143,12 +143,16 @@ const SlotSymbols = {
     baseVal: 50,
     multipliers: { 3: 50, 4: 180, 5: 600 },
     weight: 5,
-    svg: () => `<svg viewBox="0 0 100 100" class="neon-svg">
+    svg: (multiplier = 1) => `<svg viewBox="0 0 100 100" class="neon-svg">
       <!-- Rotirajući neonski bedž -->
       <circle cx="50" cy="50" r="42" stroke="#ff00de" stroke-width="3" stroke-dasharray="6,4" fill="rgba(255, 0, 222, 0.1)" />
       <polygon points="50,14 58,38 84,38 63,53 71,78 50,63 29,78 37,53 16,38 42,38" stroke="#00ffff" stroke-width="3.5" fill="rgba(0, 255, 255, 0.15)" stroke-linejoin="round"/>
       <!-- Centriran upečatljiv WILD natpis -->
-      <text x="50" y="58" font-family="'Orbitron', sans-serif" font-weight="900" font-size="20" text-anchor="middle" fill="#ffffff" stroke="#00ffff" stroke-width="1.2" letter-spacing="1">WILD</text>
+      <text x="50" y="${multiplier > 1 ? 52 : 58}" font-family="'Orbitron', sans-serif" font-weight="900" font-size="${multiplier > 1 ? 16 : 20}" text-anchor="middle" fill="#ffffff" stroke="#00ffff" stroke-width="1.2" letter-spacing="1">WILD</text>
+      ${multiplier > 1 ? `<g transform="translate(50, 75)">
+        <rect x="-18" y="-10" width="36" height="18" rx="5" fill="#ffd700" stroke="#ffffff" stroke-width="1.5" filter="drop-shadow(0 0 6px #ffd700)"/>
+        <text x="0" y="3.5" font-family="'Orbitron', sans-serif" font-weight="900" font-size="11" text-anchor="middle" fill="#000000">x${multiplier}</text>
+      </g>` : ''}
     </svg>`
   },
   bonus: {
