@@ -1,9 +1,11 @@
-const CACHE_NAME = 'neon-slot-v3';
+const CACHE_NAME = 'neon-slot-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './manifest.json',
   './css/style.css',
+  './assets/icons/icon-192.png',
+  './assets/icons/icon-512.png',
   './js/config.js',
   './js/audio.js',
   './js/symbols.js',

@@ -2,15 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Neon Nights - Cyberpunk Arcade Slots</title>
   
-  <!-- PWA Meta Tags -->
+  <!-- PWA Meta Tags & Native iOS/Android Support -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#ff00de">
+  <meta name="theme-color" content="#000000">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="NeonSlot">
+  <meta name="apple-mobile-web-app-title" content="NeonSlots">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
 
   <!-- Tailwind CSS & Confetti CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -73,11 +76,54 @@
           </div>
         </div>
 
+        <!-- Header Permanent Install App Button (Visible if not in standalone) -->
+        <button id="header-install-btn" class="hidden px-2.5 h-9 rounded-full border border-pink-500/70 text-pink-400 font-bold text-xs hover:border-pink-400 hover:shadow-[0_0_15px_#ff00de] transition bg-black/60 items-center gap-1.5 animate-pulse" title="Install App">
+          <svg class="w-4 h-4 fill-none stroke-current stroke-2" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span class="tracking-wider">INSTALL</span>
+        </button>
+
         <!-- Info / Paytable Button -->
         <button id="open-info-btn" class="w-9 h-9 rounded-full border border-cyan-500/50 text-cyan-400 font-black flex items-center justify-center text-sm hover:border-cyan-400 hover:shadow-[0_0_12px_#00ffff] transition bg-black/60" title="Game Rules">
           i
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- iOS PWA INSTALL INSTRUCTIONS MODAL -->
+  <div id="ios-install-modal" class="modal-overlay">
+    <div class="p-6 max-w-sm w-full m-3 relative bg-black/95 text-left border-2 border-pink-500 rounded-3xl shadow-[0_0_40px_#ff00de]">
+      <button id="close-ios-modal-btn" class="absolute top-4 right-4 text-gray-400 hover:text-white font-bold text-xl">✕</button>
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-cyan-500 flex items-center justify-center text-2xl shadow-lg">
+          🎰
+        </div>
+        <div>
+          <h2 class="text-lg font-black text-white tracking-wide">INSTALL ON iOS</h2>
+          <div class="text-[11px] text-pink-400 font-bold uppercase">Add to Home Screen</div>
+        </div>
+      </div>
+      <div class="space-y-3 text-xs text-gray-300">
+        <div class="flex items-start gap-3 p-2.5 rounded-xl bg-gray-900/60 border border-gray-800">
+          <span class="w-6 h-6 rounded-full bg-pink-500 text-black font-black flex items-center justify-center shrink-0">1</span>
+          <div>Tap the <strong class="text-white">Share</strong> button <span class="text-cyan-400 font-bold">⎋</span> at the bottom of Safari.</div>
+        </div>
+        <div class="flex items-start gap-3 p-2.5 rounded-xl bg-gray-900/60 border border-gray-800">
+          <span class="w-6 h-6 rounded-full bg-pink-500 text-black font-black flex items-center justify-center shrink-0">2</span>
+          <div>Scroll down and tap <strong class="text-yellow-400">"Add to Home Screen" ⊞</strong>.</div>
+        </div>
+        <div class="flex items-start gap-3 p-2.5 rounded-xl bg-gray-900/60 border border-gray-800">
+          <span class="w-6 h-6 rounded-full bg-pink-500 text-black font-black flex items-center justify-center shrink-0">3</span>
+          <div>Tap <strong class="text-cyan-400">Add</strong> in top right. Enjoy full-screen native gaming!</div>
+        </div>
+      </div>
+      <button onclick="document.getElementById('ios-install-modal').style.display='none'" class="w-full mt-5 py-2.5 bg-gradient-to-r from-pink-500 to-cyan-500 text-black font-black text-xs uppercase tracking-wider rounded-xl hover:scale-105 transition">
+        GOT IT!
+      </button>
     </div>
   </div>
 

@@ -757,6 +757,22 @@ class SlotMachineApp {
   }
 
   registerPWA() {
+    // 1. Detekcija standalone / nativnog režima
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone === true || 
+                         document.referrer.includes('android-app://');
+
+    const headerInstallBtn = document.getElementById('header-install-btn');
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    // Ako NIJE instalirana, prikaži stalno dugme za instalaciju u zaglavlju
+    if (!isStandalone) {
+      if (headerInstallBtn) {
+        headerInstallBtn.classList.remove('hidden');
+        headerInstallBtn.classList.add('flex');
+      }
+    }
+
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(err => {
@@ -765,46 +781,64 @@ class SlotMachineApp {
       });
     }
 
-    // Rukovanje automatskim zahtevom za instalaciju (beforeinstallprompt)
+    // 2. Rukovanje prečicom i automatskim zahtevom za instalaciju (beforeinstallprompt)
     window.addEventListener('beforeinstallprompt', (e) => {
-      // Spreči podrazumevani mini-infobar pregledača
       e.preventDefault();
       this.deferredPrompt = e;
 
-      // Prikaz prilagođenog neonskog install banera
+      // Prikaži i gornji baner i dugme u zaglavlju
       const banner = document.getElementById('pwa-install-banner');
-      if (banner && !sessionStorage.getItem('pwa_prompt_dismissed')) {
+      if (banner && !sessionStorage.getItem('pwa_prompt_dismissed') && !isStandalone) {
         banner.classList.remove('hidden');
         banner.classList.add('flex');
       }
 
-      const installBtn = document.getElementById('pwa-install-btn');
-      const dismissBtn = document.getElementById('pwa-dismiss-btn');
+      if (headerInstallBtn) {
+        headerInstallBtn.classList.remove('hidden');
+        headerInstallBtn.classList.add('flex');
+      }
+    });
 
-      installBtn?.addEventListener('click', async () => {
-        if (!this.deferredPrompt) return;
-        banner?.classList.add('hidden');
-        // Pokretanje nativnog install dijaloga
+    // Povezivanje klikova na Install dugmad
+    const triggerInstall = async () => {
+      if (this.deferredPrompt) {
         this.deferredPrompt.prompt();
         const { outcome } = await this.deferredPrompt.userChoice;
         if (outcome === 'accepted') {
           this.setMessage("INSTALLING NEON NIGHTS...", "text-green-400 font-bold");
         }
         this.deferredPrompt = null;
-      });
+      } else if (isIOS) {
+        // Na iOS Safari ne postoji beforeinstallprompt, prikaži detaljno uputstvo
+        const iosModal = document.getElementById('ios-install-modal');
+        if (iosModal) iosModal.style.display = 'flex';
+      } else {
+        // Fallback info ako je pregledač već instalirao ili ne podržava
+        this.setMessage("USE BROWSER MENU: INSTALL APP / ADD TO HOME SCREEN", "text-cyan-300 font-bold");
+      }
+    };
 
-      dismissBtn?.addEventListener('click', () => {
-        banner?.classList.add('hidden');
-        sessionStorage.setItem('pwa_prompt_dismissed', 'true');
-      });
+    document.getElementById('pwa-install-btn')?.addEventListener('click', triggerInstall);
+    headerInstallBtn?.addEventListener('click', triggerInstall);
+
+    document.getElementById('pwa-dismiss-btn')?.addEventListener('click', () => {
+      const banner = document.getElementById('pwa-install-banner');
+      if (banner) banner.classList.add('hidden');
+      sessionStorage.setItem('pwa_prompt_dismissed', 'true');
     });
 
-    // Sakrij baner čim se aplikacija instalira
+    document.getElementById('close-ios-modal-btn')?.addEventListener('click', () => {
+      const iosModal = document.getElementById('ios-install-modal');
+      if (iosModal) iosModal.style.display = 'none';
+    });
+
+    // Sakrij install elemente čim se aplikacija instalira
     window.addEventListener('appinstalled', () => {
       const banner = document.getElementById('pwa-install-banner');
       if (banner) banner.classList.add('hidden');
+      if (headerInstallBtn) headerInstallBtn.classList.add('hidden');
       this.deferredPrompt = null;
-      this.setMessage("APP INSTALLED SUCCESSFULLY!", "text-cyan-400 font-bold");
+      this.setMessage("APP INSTALLED SUCCESSFULLY!", "text-green-400 font-bold");
     });
   }
 
