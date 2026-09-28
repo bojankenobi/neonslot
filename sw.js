@@ -1,4 +1,4 @@
-const CACHE_NAME = 'neon-slot-v4';
+const CACHE_NAME = 'neon-slot-v5';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const ASSETS_TO_CACHE = [
   './css/style.css',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
+  './assets/audio/neon_theme.mp3',
   './js/config.js',
   './js/audio.js',
   './js/symbols.js',

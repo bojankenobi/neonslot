@@ -27,8 +27,10 @@ A high-performance, responsive Progressive Web Application (PWA) arcade slot cab
 - **Gamble Funkcija (Crveno / Crno):** Udvostručavanje sa vremenskim prozorom od 5 sekundi, dostupno na dobicima do 25x ulog, uz limit od maksimalno 5 uzastopnih pogađanja (streak).
 - **Progresija & Dnevne Misije:** XP nivoi, nagradni krediti (+10 Wheel Energy po završenoj misiji) i promena neonskih plazma tema (Cyberpunk, Toxic Acid, Solar Gold).
 - **Kriptografski RNG & Asimetrični Kolutovi:** `window.crypto.getRandomValues` algoritam sa sertifikovanim matematičkim modelom (~96.2% RTP) i posebnim trakama za svaki kabinet.
-- **Web Audio API Sintisajzer:** Proceduralni zvučni efekti u realnom vremenu (arpeggiatori, bas udarci, mehanički klikovi) bez zavisnosti od eksternih MP3 datoteka.
-- **PWA & Offline Podrška:** Service Worker sa Network-First keširanjem omogućava instalaciju na Android/iOS i offline igranje.
+- **Hibridni Audio Sistem (MP3 Soundtrack & Web Audio API):**
+  - Autentična retro-futuristička synthwave muzička tema u pozadini (`assets/audio/neon_theme.mp3`) sa automatskim ponavljanjem (loop) i pametnim uključivanjem na korisničku interakciju.
+  - Proceduralni zvučni efekti u realnom vremenu (laseri, blasteri, kaskadni bas udarci, fanfare, mehanički klikovi koluta i točka) putem `AudioContext`.
+- **PWA & Offline Podrška:** Service Worker sa Network-First keširanjem omogućava instalaciju na Android/iOS i offline igranje (uključujući muzičku temu).
 
 ---
 
@@ -55,7 +57,7 @@ A high-performance, responsive Progressive Web Application (PWA) arcade slot cab
 - **Gamble (Double or Nothing):** Fair 50/50 red vs black card gamble with a 5-second decision window and a 5-round maximum streak cap.
 - **Daily Quests & Player Progression:** Level progression with XP bars, milestone rewards (+10 Wheel Energy on quest completion), and switchable plasma color themes.
 - **Cryptographic RNG:** Uses `window.crypto.getRandomValues` and cabinet-specific asymmetric reel strips targeting ~96.2% commercial RTP.
-- **Pure Web Audio Synthesizer:** Zero external audio assets required; all sound effects are synthesized on the fly via oscillators, gain envelopes, and filters.
+- **Hybrid Audio Engine:** Full retro-futuristic synthwave background soundtrack (`neon_theme.mp3`) paired with real-time procedural Web Audio API SFX for laser shots, reel stops, and jackpot fanfares.
 - **Progressive Web App (PWA):** Installable to home screens on mobile and desktop, supporting high-DPI displays and offline capabilities.
 
 ---

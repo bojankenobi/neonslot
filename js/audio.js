@@ -3,6 +3,20 @@ class SoundController {
   constructor() {
     this.ctx = null;
     this.enabled = true;
+    this.musicPlaying = false;
+    this.bgMusicAudio = null;
+    this.initAudioElement();
+  }
+
+  initAudioElement() {
+    try {
+      this.bgMusicAudio = new Audio('assets/audio/neon_theme.mp3');
+      this.bgMusicAudio.loop = true;
+      this.bgMusicAudio.volume = 0.55;
+      this.bgMusicAudio.preload = 'auto';
+    } catch (e) {
+      console.warn('Audio element initialization fallback:', e);
+    }
   }
 
   init() {
@@ -14,6 +28,9 @@ class SoundController {
     }
     if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
+    }
+    if (this.enabled && !this.musicPlaying) {
+      this.startAmbientMusic();
     }
   }
 
@@ -334,12 +351,36 @@ class SoundController {
     }
   }
 
-  // Atmosferična Synthwave Outrun pozadinska muzička petlja (generisana u Web Audio API)
+  // Pozadinska synthwave muzika (audio fajl sa procedurnim fallback-om)
   startAmbientMusic() {
     if (!this.enabled || this.musicPlaying) return;
+    this.musicPlaying = true;
+
+    // 1. Pokušaj reprodukcije MP3 muzičke teme
+    if (this.bgMusicAudio) {
+      this.bgMusicAudio.play().then(() => {
+        // Uspešno pokrenuta MP3 muzika
+      }).catch(err => {
+        // Autoplay blokiran od strane browsera pre korisničke interakcije
+        this.musicPlaying = false;
+        const startOnUserInteraction = () => {
+          if (this.enabled && !this.musicPlaying) {
+            this.startAmbientMusic();
+          }
+          window.removeEventListener('click', startOnUserInteraction);
+          window.removeEventListener('keydown', startOnUserInteraction);
+          window.removeEventListener('touchstart', startOnUserInteraction);
+        };
+        window.addEventListener('click', startOnUserInteraction, { once: true });
+        window.addEventListener('keydown', startOnUserInteraction, { once: true });
+        window.addEventListener('touchstart', startOnUserInteraction, { once: true });
+      });
+      return;
+    }
+
+    // 2. Fallback proceduralni sintisajzer
     this.init();
     if (!this.ctx) return;
-    this.musicPlaying = true;
 
     const chords = [
       [65.41, 130.81, 196.00], // C2, C3, G3
@@ -378,6 +419,11 @@ class SoundController {
 
   stopAmbientMusic() {
     this.musicPlaying = false;
+    if (this.bgMusicAudio) {
+      try {
+        this.bgMusicAudio.pause();
+      } catch (e) {}
+    }
     if (this.musicInterval) {
       clearInterval(this.musicInterval);
       this.musicInterval = null;
