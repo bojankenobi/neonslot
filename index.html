@@ -380,7 +380,7 @@
         <p><strong class="text-fuchsia-400">CASCADE & MULTIPLIER:</strong> Winning symbols explode and make way for new falling symbols! Consecutive cascade drops climb the multiplier trail: <strong class="text-yellow-400">x1 ➔ x2 ➔ x3 ➔ x5 ➔ x10 ➔ x15 ➔ x20 ➔ x25!</strong></p>
         <p><strong class="text-cyan-400">FREE SPINS (3+ SCATTERS):</strong> Awards 10 Free Spins! The multiplier is <strong class="text-yellow-400">STICKY</strong> — it never resets between spins and only climbs higher!</p>
         <p><strong class="text-white">WILD (W):</strong> Substitutes for regular paying symbols. Wilds can land with <strong class="text-yellow-400">x2, x3, or x5 Multipliers</strong>! Random Neon Lightning strikes can turn entire reels into Expanding Wilds!</p>
-        <p><strong class="text-red-500">SUPER SHOOTER BONUS:</strong> 3+ BONUS symbols trigger the arcade target shooter mini-game!</p>
+        <p><strong class="text-red-500">CYBER BLASTER BONUS:</strong> 3+ BONUS symbols trigger the arcade rail-shooter! Tap or click to fire high-energy lasers, build up to <strong class="text-yellow-300">x5 COMBO multipliers</strong>, detonate <strong class="text-pink-500">Cyber Bombs</strong> for massive screen-clearing chain reactions, and shoot <strong class="text-cyan-400">Chrono Targets</strong> for extra time!</p>
         <p><strong class="text-yellow-400">CYBER WHEEL & JACKPOTS:</strong> Fill the <strong class="text-cyan-400">Cyber Energy Meter (50 spins / Quests)</strong> or reach a Must-Drop Jackpot limit to unlock the Cyber Wheel! When unlocked, an alert gives you a <strong class="text-yellow-300">limited time window (35s)</strong> to claim your spins with up to <strong class="text-yellow-400">x20 Mega multipliers</strong>!</p>
         <p><strong class="text-pink-400">GAMBLE (DOUBLE OR NOTHING):</strong> Available on base wins up to 25x bet. You have a <strong class="text-yellow-300">5-second window</strong> to double your win (Red or Black) up to a maximum streak of <strong class="text-cyan-400">5 consecutive rounds</strong>!</p>
       </div>
@@ -472,14 +472,56 @@
     </div>
   </div>
 
-  <!-- SHOOTER BONUS MODAL -->
-  <div id="bonus-game-modal" class="modal-overlay">
-    <div id="custom-cursor"></div>
+  <!-- SHOOTER BONUS MODAL (CYBER ARCADE RAIL-SHOOTER) -->
+  <div id="bonus-game-modal" class="modal-overlay select-none">
+    <!-- Laser Blaster Beam & Particle Explosions Canvas -->
+    <canvas id="shooter-fx-canvas" class="absolute inset-0 pointer-events-none z-20"></canvas>
+
+    <!-- Cyber Crosshair Cursor -->
+    <div id="custom-cursor" class="pointer-events-none">
+      <div class="crosshair-ring"></div>
+      <div class="crosshair-dot"></div>
+      <div class="crosshair-line top"></div>
+      <div class="crosshair-line bottom"></div>
+      <div class="crosshair-line left"></div>
+      <div class="crosshair-line right"></div>
+    </div>
+
+    <!-- Interactive Target Arena Container -->
     <div class="w-full h-full relative overflow-hidden" id="bonus-container">
-      <div class="absolute top-8 left-0 w-full text-center pointer-events-none z-30">
-        <h1 class="text-3xl md:text-5xl font-black text-red-500 tracking-widest drop-shadow-[0_0_20px_red]">SHOOTER</h1>
-        <p class="text-sm md:text-lg text-white mt-1 tracking-wider">TAP OR CLICK FLYING NEON FRUITS!</p>
-        <div class="text-2xl md:text-4xl text-yellow-400 font-mono mt-2">SCORE: <span id="bonus-game-score">0</span></div>
+      
+      <!-- Top HUD Header -->
+      <div class="absolute top-4 left-0 w-full px-4 md:px-8 flex justify-between items-center pointer-events-none z-30">
+        <!-- Left: Time Remaining Progress Bar -->
+        <div class="flex flex-col items-start gap-1 w-32 md:w-48">
+          <div class="text-[10px] md:text-xs text-pink-400 font-black tracking-widest flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-pink-500 animate-ping"></span>
+            TIME LEFT: <span id="shooter-time-text" class="text-white font-mono">15.0s</span>
+          </div>
+          <div class="w-full h-2.5 bg-black/80 border border-pink-500/50 rounded-full overflow-hidden shadow-[0_0_10px_#ff0055]">
+            <div id="shooter-time-bar" class="h-full bg-gradient-to-r from-pink-500 to-yellow-400 rounded-full transition-all duration-100" style="width: 100%;"></div>
+          </div>
+        </div>
+
+        <!-- Center: Title & Arcade Banner -->
+        <div class="text-center">
+          <div class="text-xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-yellow-400 to-cyan-400 tracking-widest drop-shadow-[0_0_15px_red]">
+            CYBER BLASTER
+          </div>
+          <div class="text-[9px] md:text-[11px] text-cyan-300 font-bold tracking-widest uppercase">
+            TARGET & DESTROY • CHAIN EXPLOSIONS
+          </div>
+        </div>
+
+        <!-- Right: Score & Active Combo Meter -->
+        <div class="flex flex-col items-end gap-1">
+          <div class="text-[10px] md:text-xs text-yellow-400 font-black tracking-widest">
+            SCORE: <span id="bonus-game-score" class="text-lg md:text-2xl text-white font-mono font-black text-shadow-[0_0_12px_#ffd700]">0</span>
+          </div>
+          <div id="shooter-combo-badge" class="px-2 py-0.5 rounded-full bg-yellow-950/80 border border-yellow-400 text-yellow-300 text-[10px] font-black tracking-wider transition transform scale-95 shadow-[0_0_12px_#ffd700]">
+            COMBO x1
+          </div>
+        </div>
       </div>
     </div>
   </div>

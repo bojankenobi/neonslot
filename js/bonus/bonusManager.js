@@ -299,60 +299,330 @@ class BonusManager {
     requestAnimationFrame(animateWheel);
   }
 
-  // --- SHOOTER BONUS ---
+  // --- CYBER ARCADE RAIL-SHOOTER BONUS ---
   startShooterGame(currentBet) {
     this.shooterScore = 0;
     this.shooterActive = true;
     this.currentBet = currentBet;
+    this.activeTargets = new Map();
+    this.targetIdCounter = 0;
+
+    // Combo sistem
+    this.comboCount = 0;
+    this.comboMultiplier = 1;
+    this.lastHitTime = 0;
+
+    // Tajmer (15 sekundi sa dinamičkim dodavanjem vremena)
+    this.shooterDurationMs = 15000;
+    this.shooterTimeRemaining = this.shooterDurationMs;
+    this.shooterStartTime = performance.now();
 
     const modal = document.getElementById('bonus-game-modal');
     const scoreEl = document.getElementById('bonus-game-score');
     const container = document.getElementById('bonus-container');
     const cursor = document.getElementById('custom-cursor');
+    const comboBadge = document.getElementById('shooter-combo-badge');
+    const timeText = document.getElementById('shooter-time-text');
+    const timeBar = document.getElementById('shooter-time-bar');
 
     if (scoreEl) scoreEl.innerText = "0";
+    if (comboBadge) {
+      comboBadge.innerText = "COMBO x1";
+      comboBadge.className = "px-2 py-0.5 rounded-full bg-yellow-950/80 border border-yellow-400 text-yellow-300 text-[10px] font-black tracking-wider transition transform scale-95 shadow-[0_0_12px_#ffd700]";
+    }
     if (modal) modal.style.display = 'block';
     if (cursor) cursor.style.display = 'block';
 
     Sound.playBonusTrigger();
 
     // Čišćenje starih elemenata
-    container.querySelectorAll('.fruit-carrier').forEach(e => e.remove());
+    container.querySelectorAll('.shooter-target-entity, .bonus-score-pop, .laser-impact-flash, .bomb-shockwave').forEach(e => e.remove());
+
+    // Inicijalizacija laserskog i čestičnog Canvasa
+    this.initShooterCanvas();
+
+    // Mouse i Touch praćenje
+    this.shooterPointerX = window.innerWidth / 2;
+    this.shooterPointerY = window.innerHeight / 2;
 
     const moveHandler = (e) => {
+      let clientX = e.clientX;
+      let clientY = e.clientY;
+      if (e.type.startsWith('touch') && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      }
+      this.shooterPointerX = clientX;
+      this.shooterPointerY = clientY;
       if (cursor) {
-        cursor.style.left = e.clientX + 'px';
-        cursor.style.top = e.clientY + 'px';
+        cursor.style.left = clientX + 'px';
+        cursor.style.top = clientY + 'px';
       }
     };
-    window.addEventListener('mousemove', moveHandler);
 
-    this.spawnTimer = setInterval(() => this.spawnShooterTarget(container), 550);
-    this.endTimer = setTimeout(() => {
-      window.removeEventListener('mousemove', moveHandler);
-      this.endShooterGame(modal, cursor);
-    }, 14000);
+    // Globalni klik na ekran ispaljuje laserski hitac (Pew!)
+    const shootHandler = (e) => {
+      if (!this.shooterActive) return;
+      let clientX = e.clientX;
+      let clientY = e.clientY;
+      if (e.type.startsWith('touch') && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+      }
+      this.fireLaserShot(clientX, clientY);
+    };
+
+    window.addEventListener('mousemove', moveHandler);
+    window.addEventListener('touchmove', moveHandler, { passive: true });
+    container.addEventListener('mousedown', shootHandler);
+    container.addEventListener('touchstart', shootHandler, { passive: false });
+
+    this.shooterMoveHandler = moveHandler;
+    this.shooterFireHandler = shootHandler;
+
+    // Spawnovanje meta (svakih 380ms)
+    this.spawnTimer = setInterval(() => this.spawnShooterTarget(container), 380);
+
+    // Glavna Loop petlja: ažurira vreme, HUD i kretanje meta
+    let lastTick = performance.now();
+    const gameLoop = (now) => {
+      if (!this.shooterActive) return;
+      const delta = now - lastTick;
+      lastTick = now;
+
+      this.shooterTimeRemaining -= delta;
+      const progress = Math.max(0, this.shooterTimeRemaining / this.shooterDurationMs);
+
+      if (timeText) timeText.innerText = (Math.max(0, this.shooterTimeRemaining) / 1000).toFixed(1) + 's';
+      if (timeBar) timeBar.style.width = `${progress * 100}%`;
+
+      // Ažuriranje kretanja aktivnih meta
+      this.updateTargetsPosition(delta);
+
+      // Provera isteka combo niza (ako nema pogotka duže od 1.4s)
+      if (this.comboCount > 0 && (now - this.lastHitTime > 1400)) {
+        this.resetCombo();
+      }
+
+      if (this.shooterTimeRemaining <= 0) {
+        this.endShooterGame(modal, cursor);
+      } else {
+        requestAnimationFrame(gameLoop);
+      }
+    };
+    requestAnimationFrame(gameLoop);
   }
 
+  // --- LASER & CANVAS PARTICLE ENGINE ---
+  initShooterCanvas() {
+    this.fxCanvas = document.getElementById('shooter-fx-canvas');
+    if (!this.fxCanvas) return;
+    this.fxCtx = this.fxCanvas.getContext('2d');
+    this.fxCanvas.width = window.innerWidth;
+    this.fxCanvas.height = window.innerHeight;
+    this.particles = [];
+    this.laserBeams = [];
+
+    const fxLoop = () => {
+      if (!this.shooterActive) return;
+      this.renderShooterFX();
+      requestAnimationFrame(fxLoop);
+    };
+    requestAnimationFrame(fxLoop);
+  }
+
+  fireLaserShot(targetX, targetY) {
+    Sound.playLaserShot();
+
+    // Dodaj laserski zrak od dna ekrana ka meti
+    const startX = window.innerWidth * 0.5;
+    const startY = window.innerHeight;
+    this.laserBeams.push({
+      x1: startX,
+      y1: startY,
+      x2: targetX,
+      y2: targetY,
+      alpha: 1,
+      color: '#00ffff'
+    });
+
+    // Muzzle impact flash
+    const flash = document.createElement('div');
+    flash.className = 'laser-impact-flash';
+    flash.style.left = targetX + 'px';
+    flash.style.top = targetY + 'px';
+    const container = document.getElementById('bonus-container');
+    if (container) container.appendChild(flash);
+    setTimeout(() => flash.remove(), 250);
+  }
+
+  renderShooterFX() {
+    if (!this.fxCtx) return;
+    this.fxCtx.clearRect(0, 0, this.fxCanvas.width, this.fxCanvas.height);
+
+    // 1. Crtaj Laserske zrake
+    for (let i = this.laserBeams.length - 1; i >= 0; i--) {
+      const b = this.laserBeams[i];
+      this.fxCtx.save();
+      this.fxCtx.strokeStyle = `rgba(0, 255, 255, ${b.alpha})`;
+      this.fxCtx.lineWidth = 4 * b.alpha;
+      this.fxCtx.shadowColor = '#00ffff';
+      this.fxCtx.shadowBlur = 15;
+      this.fxCtx.beginPath();
+      this.fxCtx.moveTo(b.x1, b.y1);
+      this.fxCtx.lineTo(b.x2, b.y2);
+      this.fxCtx.stroke();
+
+      // Unutrašnje belo jezgro lasera
+      this.fxCtx.strokeStyle = `rgba(255, 255, 255, ${b.alpha})`;
+      this.fxCtx.lineWidth = 2 * b.alpha;
+      this.fxCtx.beginPath();
+      this.fxCtx.moveTo(b.x1, b.y1);
+      this.fxCtx.lineTo(b.x2, b.y2);
+      this.fxCtx.stroke();
+      this.fxCtx.restore();
+
+      b.alpha -= 0.12;
+      if (b.alpha <= 0) {
+        this.laserBeams.splice(i, 1);
+      }
+    }
+
+    // 2. Crtaj Čestice eksplozija (Particles)
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      const p = this.particles[i];
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.15; // gravitacija
+      p.alpha -= 0.025;
+      p.rotation += p.rotSpeed;
+
+      this.fxCtx.save();
+      this.fxCtx.translate(p.x, p.y);
+      this.fxCtx.rotate(p.rotation);
+      this.fxCtx.fillStyle = p.color;
+      this.fxCtx.shadowColor = p.color;
+      this.fxCtx.shadowBlur = 10;
+      this.fxCtx.globalAlpha = Math.max(0, p.alpha);
+
+      if (p.shape === 'star') {
+        this.fxCtx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+      } else {
+        this.fxCtx.beginPath();
+        this.fxCtx.arc(0, 0, p.size, 0, Math.PI * 2);
+        this.fxCtx.fill();
+      }
+      this.fxCtx.restore();
+
+      if (p.alpha <= 0) {
+        this.particles.splice(i, 1);
+      }
+    }
+  }
+
+  createExplosionParticles(x, y, color = '#ffd700', count = 28) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = Math.random() * 8 + 2;
+      this.particles.push({
+        x: x,
+        y: y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: Math.random() * 5 + 2,
+        color: color,
+        alpha: 1,
+        rotation: Math.random() * Math.PI,
+        rotSpeed: (Math.random() - 0.5) * 0.2,
+        shape: Math.random() > 0.5 ? 'circle' : 'star'
+      });
+    }
+  }
+
+  // --- SPAWN META SA FIZIKOM I TRAJEKTORIJAMA ---
   spawnShooterTarget(container) {
     if (!this.shooterActive) return;
 
-    const availableFruits = Object.values(SlotSymbols).filter(s => s.id !== 'bonus');
-    const fruitType = availableFruits[Math.floor(Math.random() * availableFruits.length)];
+    // Ne dozvoljavamo prenatrpanost (max 7 istovremenih meta)
+    if (this.activeTargets.size >= 7) return;
 
-    const carrier = document.createElement('div');
-    carrier.className = 'fruit-carrier';
+    const id = ++this.targetIdCounter;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
 
-    const startAngle = Math.random() * 360;
-    carrier.style.transform = `translate(-50%, -50%) rotate(${startAngle}deg)`;
-    carrier.animate([
-      { transform: `translate(-50%, -50%) rotate(${startAngle}deg)` },
-      { transform: `translate(-50%, -50%) rotate(${startAngle + 360}deg)` }
-    ], { duration: 4000 + Math.random() * 2000, iterations: Infinity, easing: 'linear' });
+    // Odabir tipa mete (70% standard voćkice, 12% Bomba, 10% Hyper Wild, 8% Chrono vreme)
+    let type = 'fruit';
+    const roll = Math.random();
+    if (roll < 0.12) {
+      type = 'bomb';
+    } else if (roll < 0.22) {
+      type = 'hyper_wild';
+    } else if (roll < 0.30) {
+      type = 'chrono';
+    }
 
-    const target = document.createElement('div');
-    target.className = `fruit-target ${fruitType.cls}`;
-    target.innerHTML = fruitType.svg();
+    const targetEl = document.createElement('div');
+    targetEl.className = 'shooter-target-entity';
+
+    let color = '#ffd700';
+    let baseMult = 1;
+    let symbolId = 'cherry';
+
+    if (type === 'bomb') {
+      targetEl.classList.add('target-bomb');
+      color = '#ff0055';
+      targetEl.innerHTML = `
+        <svg viewBox="0 0 100 100" class="neon-svg">
+          <circle cx="50" cy="55" r="32" stroke="#ff0055" stroke-width="5" fill="rgba(255, 0, 85, 0.25)" />
+          <path d="M50 23 L50 12 Q 65 6 72 16" stroke="#ffd700" stroke-width="4" fill="none" />
+          <circle cx="72" cy="16" r="6" fill="#ffff00" class="animate-ping" />
+          <text x="50" y="63" font-family="'Orbitron', sans-serif" font-weight="900" font-size="16" text-anchor="middle" fill="#ffffff">BOMB</text>
+        </svg>
+      `;
+    } else if (type === 'hyper_wild') {
+      targetEl.classList.add('target-hyper-wild');
+      color = '#ffd700';
+      baseMult = 15;
+      targetEl.innerHTML = SlotSymbols.wild.svg(5);
+    } else if (type === 'chrono') {
+      targetEl.classList.add('target-chrono');
+      color = '#00ffcc';
+      targetEl.innerHTML = `
+        <svg viewBox="0 0 100 100" class="neon-svg">
+          <circle cx="50" cy="50" r="36" stroke="#00ffcc" stroke-width="4.5" fill="rgba(0, 255, 204, 0.2)" />
+          <path d="M50 24 L50 50 L68 50" stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" />
+          <text x="50" y="74" font-family="'Orbitron', sans-serif" font-weight="900" font-size="12" text-anchor="middle" fill="#00ffcc">+3s</text>
+        </svg>
+      `;
+    } else {
+      // Standardna neonska voćkica
+      const fruits = Object.values(SlotSymbols).filter(s => s.id !== 'bonus');
+      const fruit = fruits[Math.floor(Math.random() * fruits.length)];
+      symbolId = fruit.id;
+      baseMult = BonusValues[fruit.id] || 2;
+      color = fruit.color || '#ff00de';
+      targetEl.classList.add(fruit.cls);
+      targetEl.innerHTML = fruit.svg();
+    }
+
+    // Pozicija i fizika (lete odozdo ka gore po paraboli ili levo-desno)
+    const startFromBottom = Math.random() > 0.3;
+    let posX, posY, velX, velY;
+
+    if (startFromBottom) {
+      posX = Math.random() * (w - 140) + 70;
+      posY = h + 40;
+      velX = (Math.random() - 0.5) * 3;
+      velY = -(Math.random() * 5 + 9.5); // izbacuje u vis
+    } else {
+      const fromLeft = Math.random() > 0.5;
+      posX = fromLeft ? -40 : w + 40;
+      posY = Math.random() * (h * 0.5) + (h * 0.2);
+      velX = fromLeft ? (Math.random() * 3 + 3.5) : -(Math.random() * 3 + 3.5);
+      velY = (Math.random() - 0.5) * 2.5;
+    }
+
+    targetEl.style.transform = `translate(${posX}px, ${posY}px)`;
 
     const hit = (e) => {
       e.preventDefault();
@@ -363,66 +633,208 @@ class BonusManager {
         clientX = e.touches[0].clientX;
         clientY = e.touches[0].clientY;
       }
-      this.hitTarget(clientX, clientY, carrier, fruitType);
+      this.hitTargetEntity(id, clientX, clientY);
     };
 
-    target.addEventListener('mousedown', hit);
-    target.addEventListener('touchstart', hit, { passive: false });
+    targetEl.addEventListener('mousedown', hit);
+    targetEl.addEventListener('touchstart', hit, { passive: false });
 
-    carrier.appendChild(target);
-    container.appendChild(carrier);
+    container.appendChild(targetEl);
 
-    setTimeout(() => {
-      if (carrier.parentNode) carrier.remove();
-    }, 4500);
+    this.activeTargets.set(id, {
+      el: targetEl,
+      type: type,
+      symbolId: symbolId,
+      baseMult: baseMult,
+      color: color,
+      x: posX,
+      y: posY,
+      vx: velX,
+      vy: velY,
+      gravity: startFromBottom ? 0.16 : 0.02
+    });
   }
 
-  hitTarget(x, y, carrier, fruit) {
-    carrier.remove();
-    document.body.classList.add('screen-shake');
-    setTimeout(() => document.body.classList.remove('screen-shake'), 250);
+  updateTargetsPosition(delta) {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
 
-    const mult = BonusValues[fruit.id] || 1;
-    const win = this.currentBet * mult;
-    this.shooterScore += win;
+    for (const [id, t] of this.activeTargets.entries()) {
+      t.x += t.vx;
+      t.y += t.vy;
+      t.vy += t.gravity;
 
-    const scoreEl = document.getElementById('bonus-game-score');
-    if (scoreEl) scoreEl.innerText = this.shooterScore;
+      t.el.style.transform = `translate(${t.x}px, ${t.y}px)`;
 
-    this.showPopText(x, y, `+${win}`, '#ffff00');
+      // Ako je meta izletela van ekrana, uklanjamo je
+      if (t.y > h + 100 || t.x < -100 || t.x > w + 100) {
+        t.el.remove();
+        this.activeTargets.delete(id);
+      }
+    }
+  }
 
-    if (fruit.id === 'wild') {
-      this.showPopText(x, y - 35, 'HYPER CHARGE!', '#ff00de');
-      this.slot.jackpotManager.hyperCharge();
+  hitTargetEntity(targetId, clickX, clickY) {
+    const target = this.activeTargets.get(targetId);
+    if (!target) return;
+
+    const hitX = clickX || target.x + 38;
+    const hitY = clickY || target.y + 38;
+
+    // 1. Obrada COMBO niza
+    const now = performance.now();
+    this.lastHitTime = now;
+    this.comboCount++;
+    if (this.comboCount >= 8) {
+      this.comboMultiplier = 5;
+    } else if (this.comboCount >= 5) {
+      this.comboMultiplier = 3;
+    } else if (this.comboCount >= 3) {
+      this.comboMultiplier = 2;
+    } else {
+      this.comboMultiplier = 1;
     }
 
-    Sound.playReelStop();
+    this.updateComboBadge();
+    Sound.playComboSound(this.comboMultiplier);
+
+    // 2. Čestice eksplozije i uklanjanje mete
+    this.createExplosionParticles(hitX, hitY, target.color, 32);
+    target.el.remove();
+    this.activeTargets.delete(targetId);
+
+    // 3. Efekti po tipu mete
+    if (target.type === 'bomb') {
+      // Masivna lančana reakcija (Screen Nuke)
+      this.triggerBombShockwave(hitX, hitY);
+    } else if (target.type === 'chrono') {
+      // Dodaj +3s vremenu
+      this.shooterTimeRemaining = Math.min(this.shooterDurationMs, this.shooterTimeRemaining + 3000);
+      this.showPopText(hitX, hitY, '+3 SECONDS!', '#00ffcc');
+      Sound.playMultiplierRise(3);
+    } else {
+      // Regularna voćkica ili Hyper Wild
+      const win = Math.round(this.currentBet * target.baseMult * this.comboMultiplier);
+      this.shooterScore += win;
+
+      const scoreEl = document.getElementById('bonus-game-score');
+      if (scoreEl) scoreEl.innerText = this.shooterScore;
+
+      const popLabel = this.comboMultiplier > 1 ? `+${win} (x${this.comboMultiplier})` : `+${win}`;
+      this.showPopText(hitX, hitY, popLabel, target.color);
+
+      if (target.type === 'hyper_wild') {
+        this.slot.jackpotManager.hyperCharge();
+        this.showPopText(hitX, hitY - 40, 'HYPER CHARGE!', '#ffd700');
+      }
+    }
+
+    // Shake ekrana pri pogotku
+    document.body.classList.add('screen-shake');
+    setTimeout(() => document.body.classList.remove('screen-shake'), 180);
   }
 
-  showPopText(x, y, text, color) {
+  triggerBombShockwave(x, y) {
+    Sound.playBombExplosion();
+
+    // Shockwave vizuelni talas
+    const shockwave = document.createElement('div');
+    shockwave.className = 'bomb-shockwave';
+    shockwave.style.left = x + 'px';
+    shockwave.style.top = y + 'px';
+    const container = document.getElementById('bonus-container');
+    if (container) container.appendChild(shockwave);
+    setTimeout(() => shockwave.remove(), 600);
+
+    this.showPopText(x, y, 'MEGA EXPLOSION!', '#ff0055');
+
+    // Uništava sve preostale mete na ekranu uz lančani skor
+    let bombBonus = 0;
+    const targetsToDestroy = Array.from(this.activeTargets.entries());
+
+    targetsToDestroy.forEach(([id, t], index) => {
+      setTimeout(() => {
+        if (!this.activeTargets.has(id)) return;
+        this.createExplosionParticles(t.x + 38, t.y + 38, t.color, 24);
+        t.el.remove();
+        this.activeTargets.delete(id);
+
+        const pieceWin = Math.round(this.currentBet * t.baseMult * this.comboMultiplier);
+        bombBonus += pieceWin;
+        this.shooterScore += pieceWin;
+        const scoreEl = document.getElementById('bonus-game-score');
+        if (scoreEl) scoreEl.innerText = this.shooterScore;
+        this.showPopText(t.x + 38, t.y + 38, `+${pieceWin}`, t.color);
+      }, (index + 1) * 70);
+    });
+  }
+
+  updateComboBadge() {
+    const badge = document.getElementById('shooter-combo-badge');
+    if (!badge) return;
+    badge.innerText = `COMBO x${this.comboMultiplier}`;
+    if (this.comboMultiplier >= 5) {
+      badge.className = "px-3 py-1 rounded-full bg-red-600 text-white font-black text-xs uppercase tracking-wider animate-bounce shadow-[0_0_20px_#ff0055]";
+    } else if (this.comboMultiplier >= 3) {
+      badge.className = "px-2.5 py-0.5 rounded-full bg-fuchsia-900 border border-fuchsia-400 text-fuchsia-300 font-black text-[11px] tracking-wider shadow-[0_0_15px_#ff00de]";
+    } else if (this.comboMultiplier >= 2) {
+      badge.className = "px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-400 text-cyan-300 font-bold text-[10px] tracking-wider shadow-[0_0_12px_#00ffff]";
+    } else {
+      badge.className = "px-2 py-0.5 rounded-full bg-yellow-950/80 border border-yellow-400 text-yellow-300 text-[10px] font-black tracking-wider shadow-[0_0_10px_#ffd700]";
+    }
+  }
+
+  resetCombo() {
+    this.comboCount = 0;
+    this.comboMultiplier = 1;
+    this.updateComboBadge();
+  }
+
+  showPopText(x, y, text, color = '#ffd700') {
     const el = document.createElement('div');
     el.className = 'bonus-score-pop';
     el.style.left = (x || window.innerWidth / 2) + 'px';
     el.style.top = (y || window.innerHeight / 2) + 'px';
     el.style.color = color;
     el.innerText = text;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 800);
+    const container = document.getElementById('bonus-container') || document.body;
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 750);
   }
 
   endShooterGame(modal, cursor) {
+    if (!this.shooterActive) return;
     this.shooterActive = false;
     clearInterval(this.spawnTimer);
-    clearTimeout(this.endTimer);
 
     if (cursor) cursor.style.display = 'none';
+
+    // Skidanje event listenera
+    const container = document.getElementById('bonus-container');
+    if (this.shooterMoveHandler) {
+      window.removeEventListener('mousemove', this.shooterMoveHandler);
+      window.removeEventListener('touchmove', this.shooterMoveHandler);
+    }
+    if (this.shooterFireHandler && container) {
+      container.removeEventListener('mousedown', this.shooterFireHandler);
+      container.removeEventListener('touchstart', this.shooterFireHandler);
+    }
+
+    // Ukloni preostale mete
+    this.activeTargets.forEach(t => t.el.remove());
+    this.activeTargets.clear();
+
+    Sound.playWin(true);
+    if (typeof confetti === 'function') {
+      confetti({ particleCount: 200, spread: 80, origin: { y: 0.5 } });
+    }
 
     setTimeout(() => {
       if (modal) modal.style.display = 'none';
       if (this.shooterScore > 0) {
-        this.slot.addBonusWin(this.shooterScore, 'SHOOTER BONUS');
+        this.slot.addBonusWin(this.shooterScore, 'CYBER BLASTER BONUS');
       }
-    }, 1000);
+    }, 1200);
   }
 
   // --- GAMBLE (CRVENO / CRNO SA OGRANIČENJEM NA 5 RUNDI) ---

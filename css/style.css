@@ -800,56 +800,161 @@ body {
   backdrop-filter: blur(4px);
 }
 
-/* Shooter Bonus */
+/* ========================================================
+   CYBER ARCADE RAIL-SHOOTER STYLING
+   ======================================================== */
 #bonus-game-modal {
-  background: radial-gradient(circle, #250015 0%, #000000 100%);
-  cursor: none;
+  background: radial-gradient(circle at 50% 50%, #1a0026 0%, #080010 60%, #000000 100%);
+  cursor: crosshair;
+  touch-action: none;
 }
+
 #custom-cursor {
   position: fixed;
-  width: 50px; height: 50px;
-  border: 2px solid #00ffff;
-  border-radius: 50%;
-  box-shadow: 0 0 15px #00ffff, inset 0 0 10px #00ffff;
+  width: 54px;
+  height: 54px;
   pointer-events: none;
   z-index: 100;
   transform: translate(-50%, -50%);
   display: none;
-}
-#custom-cursor::before, #custom-cursor::after {
-  content: ''; position: absolute; background: #00ffff;
-}
-#custom-cursor::before { width: 30px; height: 2px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-#custom-cursor::after { width: 2px; height: 30px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-
-.fruit-carrier { position: absolute; top: 50%; left: 50%; width: 0; height: 0; }
-.fruit-target {
-  position: absolute; width: 75px; height: 75px; margin-top: -37px; margin-left: -37px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: none; pointer-events: auto; animation: orbit-fly 4.5s ease-out forwards;
-}
-.fruit-target svg { width: 100%; height: 100%; filter: drop-shadow(0 0 10px currentColor); }
-@keyframes orbit-fly {
-  0% { transform: translateY(0) scale(0.1); opacity: 0; }
-  10% { opacity: 1; }
-  20% { transform: translateY(-180px) scale(1); }
-  80% { transform: translateY(-180px) scale(1); opacity: 1; }
-  100% { transform: translateY(-380px) scale(0); opacity: 0; }
+  transition: transform 0.05s ease-out;
 }
 
+.crosshair-ring {
+  position: absolute;
+  inset: 4px;
+  border: 2px solid #00ffff;
+  border-radius: 50%;
+  box-shadow: 0 0 15px #00ffff, inset 0 0 8px #00ffff;
+  animation: crosshair-rotate 8s linear infinite;
+}
+@keyframes crosshair-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.crosshair-dot {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 6px; height: 6px;
+  background: #ff0055;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 8px #ff0055;
+}
+
+.crosshair-line {
+  position: absolute;
+  background: #00ffff;
+  box-shadow: 0 0 6px #00ffff;
+}
+.crosshair-line.top { top: 0; left: 50%; width: 2px; height: 10px; transform: translateX(-50%); }
+.crosshair-line.bottom { bottom: 0; left: 50%; width: 2px; height: 10px; transform: translateX(-50%); }
+.crosshair-line.left { top: 50%; left: 0; width: 10px; height: 2px; transform: translateY(-50%); }
+.crosshair-line.right { top: 50%; right: 0; width: 10px; height: 2px; transform: translateY(-50%); }
+
+/* Target Entities */
+.shooter-target-entity {
+  position: absolute;
+  width: 76px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  touch-action: none;
+  cursor: pointer;
+  z-index: 15;
+  transition: filter 0.15s;
+}
+
+.shooter-target-entity:hover {
+  filter: brightness(1.4) drop-shadow(0 0 15px #ffffff);
+}
+
+.shooter-target-entity svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 12px currentColor);
+  pointer-events: none;
+}
+
+/* Specijalna Cyber Bomba Meta */
+.target-bomb {
+  animation: bomb-threat 0.4s infinite alternate;
+}
+@keyframes bomb-threat {
+  from { transform: scale(0.95); filter: drop-shadow(0 0 15px #ff0000); }
+  to { transform: scale(1.15); filter: drop-shadow(0 0 35px #ff5500) brightness(1.4); }
+}
+
+/* Hyper Golden Wild Meta */
+.target-hyper-wild {
+  animation: hyper-wild-glow 0.3s infinite alternate;
+}
+@keyframes hyper-wild-glow {
+  from { transform: scale(1); filter: drop-shadow(0 0 20px #ffd700); }
+  to { transform: scale(1.18) rotate(6deg); filter: drop-shadow(0 0 40px #ff00de) brightness(1.6); }
+}
+
+/* Chrono Time Bonus Meta */
+.target-chrono {
+  animation: chrono-float 0.5s infinite alternate;
+}
+@keyframes chrono-float {
+  from { transform: scale(1); filter: drop-shadow(0 0 20px #00ffcc); }
+  to { transform: scale(1.12); filter: drop-shadow(0 0 35px #00ffff) brightness(1.5); }
+}
+
+/* Muzzle Laser Flash na mestu klika */
+.laser-impact-flash {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffffff 0%, #00ffff 50%, transparent 80%);
+  animation: laser-flash-anim 0.25s ease-out forwards;
+  pointer-events: none;
+  z-index: 25;
+}
+@keyframes laser-flash-anim {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+}
+
+/* Shockwave Ring kad bomba eksplodira */
+.bomb-shockwave {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border: 4px solid #ff0055;
+  border-radius: 50%;
+  box-shadow: 0 0 40px #ff0055, inset 0 0 30px #ffaa00;
+  animation: shockwave-expand 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+  pointer-events: none;
+  z-index: 24;
+}
+@keyframes shockwave-expand {
+  0% { width: 40px; height: 40px; opacity: 1; }
+  100% { width: 900px; height: 900px; opacity: 0; }
+}
+
+/* Popup tekst rezultata */
 .bonus-score-pop {
   position: absolute;
   font-family: 'Orbitron', sans-serif;
   font-weight: 900;
   font-size: 26px;
-  animation: float-up 0.8s forwards;
+  animation: float-up-pop 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   pointer-events: none;
-  text-shadow: 0 0 10px currentColor;
-  z-index: 20;
+  text-shadow: 0 0 12px currentColor, 0 0 25px currentColor;
+  z-index: 30;
+  transform: translate(-50%, -50%);
 }
-@keyframes float-up {
-  0% { transform: translateY(0) scale(1); opacity: 1; }
-  100% { transform: translateY(-50px) scale(1.4); opacity: 0; }
+@keyframes float-up-pop {
+  0% { transform: translate(-50%, 0) scale(0.6); opacity: 0; }
+  30% { transform: translate(-50%, -20px) scale(1.3); opacity: 1; }
+  100% { transform: translate(-50%, -60px) scale(1); opacity: 0; }
 }
 
 /* Responsivnost za manje ekrane i telefone */

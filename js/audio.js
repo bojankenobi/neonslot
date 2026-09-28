@@ -383,6 +383,88 @@ class SoundController {
       this.musicInterval = null;
     }
   }
+
+  // --- CYBER ARCADE SHOOTER AUDIO ---
+  // Laserski hitac (Pew-pew blasters)
+  playLaserShot() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(1100, t);
+    osc.frequency.exponentialRampToValueAtTime(120, t + 0.12);
+
+    gain.gain.setValueAtTime(0.22, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.12);
+
+    if ('vibrate' in navigator) {
+      navigator.vibrate(12);
+    }
+  }
+
+  // Masivna eksplozija bombe (Sub-bass drop & crunch)
+  playBombExplosion() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(180, t);
+    osc.frequency.exponentialRampToValueAtTime(25, t + 0.45);
+
+    gain.gain.setValueAtTime(0.6, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.45);
+
+    if ('vibrate' in navigator) {
+      navigator.vibrate([40, 30, 80]);
+    }
+  }
+
+  // Combo rastući ton (Povećava visinu sa svakim uzastopnim combo udarcem)
+  playComboSound(comboLevel = 1) {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    const t = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    const baseFreq = 440 * Math.pow(1.15, Math.min(comboLevel, 6));
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(baseFreq, t);
+    osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.5, t + 0.14);
+
+    gain.gain.setValueAtTime(0.25, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(t);
+    osc.stop(t + 0.15);
+  }
 }
 
 const Sound = new SoundController();
